@@ -59,9 +59,10 @@ of the cross-module contract.
 
 ## 4. Schema
 
-`V1__init.sql` creates all seven tables from `docs/SPEC.md` §4. Only `event`,
-`event_source_ref`, and `event_occurrence` are mapped as entities in this task; the
-run/history tables are created now and mapped by later modules.
+`V1__init.sql` creates only the three canonical data tables from `docs/SPEC.md` §4:
+`event`, `event_source_ref`, and `event_occurrence`. Execution history is deliberately
+not persisted; digest runs, source syncs, and notification deliveries are in-memory
+results plus structured logs.
 
 SQLite mapping choices:
 
@@ -133,6 +134,8 @@ with an explicit end still appear while they overlap the window.
 - `ddl-auto=create`, `update`, or `create-drop` in the application.
 - Editing `V1__init.sql` after it has shipped; add `V2__...` instead.
 - Letting a source delete occurrences owned by other sources.
+- Persisting digest runs, source syncs, or notification deliveries; those are in-memory
+  results and structured logs only.
 
 ## 8. Tests
 

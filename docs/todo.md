@@ -146,9 +146,9 @@ the store and matcher.
 that satisfy `ddl-auto=validate`.
 
 **Acceptance criteria:**
-- [x] `V1__init.sql` creates `event`, `event_source_ref`, `event_occurrence`,
-      `digest_run`, `digest_run_item`, `notification_delivery`, `source_sync` with the
-      constraints and indexes from `docs/SPEC.md` §4.
+- [x] `V1__init.sql` creates only the canonical data tables `event`,
+      `event_source_ref`, `event_occurrence` with the constraints and indexes from
+      `docs/SPEC.md` §4; no execution-history tables are created.
 - [x] Timestamps stored as ISO-8601 UTC text; enums as names; `local_date` as
       `YYYY-MM-DD`; FKs cascade where ownership implies it.
 - [x] Entities map `event`, `event_source_ref`, `event_occurrence` and validate against
@@ -338,21 +338,27 @@ escaping, chunked sending, and retry policy.
 
 ---
 
-### Task 11: Pipeline orchestration, run history, partial failures
+### Task 11: Pipeline orchestration, in-memory run summary, partial failures
 
 **Description:** Wire fetch → upsert → select → render → send into one pipeline that
-records every run and isolates per-source failures.
+returns an in-memory run summary, emits structured logs, and isolates per-source
+failures. Execution history is not written to SQLite.
 
 **Acceptance criteria:**
-- [ ] Creates a `digest_run` row; records selected occurrences in `digest_run_item`;
-      records each `notification_delivery`.
+- [ ] Returns a `PipelineResult` with run status, window, selected occurrence ids,
+      per-source outcomes, and delivery result; logs one `digest_run_started`,
+      one `source_sync` per source, one `notification_delivery`, and one
+      `digest_run_finished` line. No `digest_run`, `digest_run_item`,
+      `notification_delivery`, or `source_sync` rows are written.
 - [ ] Runs enabled sources independently; one throwing → `PARTIAL`, others still
       delivered, failed sources named in the footer.
 - [ ] All sources failing → run `FAILED`, no misleading empty digest (send a short
       failure notice only if configured).
 - [ ] `dry-run` renders and logs without sending; `run-on-startup` invokes the pipeline.
-- [ ] `source_sync` updated with timestamps, counts, status, error per source.
-- [ ] Integration test uses fake sources + fake notifier against a real temp SQLite DB.
+- [ ] Source outcomes carry timestamps, page/event counts, status, and error in memory
+      and logs only.
+- [ ] Integration test uses fake sources + fake notifier against a real temp SQLite DB
+      and asserts that only event data tables change.
 
 **Verification:**
 - [ ] `./gradlew test --tests 'ch.fribourgevents.pipeline.*'`
@@ -363,6 +369,7 @@ records every run and isolates per-source failures.
 **Files likely touched:**
 - `BASE/pipeline/DigestPipeline.java`
 - `BASE/pipeline/PipelineResult.java`
+- `BASE/pipeline/SourceSyncResult.java`
 - `TEST/pipeline/DigestPipelineTest.java`
 - `TEST/pipeline/FakeEventSource.java`
 - `TEST/pipeline/FakeNotificationSender.java`
@@ -590,7 +597,7 @@ canonical events, and add a run report/footer with source and dedup counts.
 - [ ] Upsert finds a canonical match, attaches `(source, source_event_id)`, adds new
       occurrences, and keeps the richer field values (non-null/longer description).
 - [ ] Digest shows the merged event once, with the preferred source URL.
-- [ ] Run records `events_seen`, `events_inserted`, `events_merged`, per-source status.
+- [ ] Run summary carries `events_seen`, `events_inserted`, `events_merged`, per-source status (memory/log only).
 - [ ] Message footer lists partial/failed sources and merged counts (configurable).
 - [ ] Integration test: same event from insitu + eventfrog fixture → one digest item,
       two `event_source_ref` rows.

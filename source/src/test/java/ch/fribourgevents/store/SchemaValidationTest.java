@@ -41,21 +41,14 @@ class SchemaValidationTest {
   }
 
   @Test
-  void flywayCreatesEveryTable() {
+  void flywayCreatesOnlyCanonicalTables() {
     List<String> tables =
         jdbc.queryForList("select name from sqlite_master where type = 'table'", String.class);
 
     assertThat(DB_FILE).exists();
     assertThat(tables)
-        .contains(
-            "event",
-            "event_source_ref",
-            "event_occurrence",
-            "digest_run",
-            "digest_run_item",
-            "notification_delivery",
-            "source_sync",
-            "flyway_schema_history");
+        .contains("event", "event_source_ref", "event_occurrence", "flyway_schema_history")
+        .doesNotContain("digest_run", "digest_run_item", "notification_delivery", "source_sync");
   }
 
   @Test
@@ -64,11 +57,8 @@ class SchemaValidationTest {
         jdbc.queryForList("select name from sqlite_master where type = 'index'", String.class);
 
     assertThat(indexes)
-        .contains(
-            "idx_event_city",
-            "idx_event_occurrence_start",
-            "idx_event_occurrence_local_date",
-            "idx_digest_run_started");
+        .contains("idx_event_city", "idx_event_occurrence_start", "idx_event_occurrence_local_date")
+        .doesNotContain("idx_digest_run_started");
   }
 
   @Test

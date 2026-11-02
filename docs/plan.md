@@ -28,8 +28,10 @@ Unraid server, with a run-on-startup flag for testing. Approved spec: `docs/SPEC
 7. **Channel-agnostic notifications.** `NotificationSender` receives a rendered
    `DigestMessage`; Telegram is the only v1 implementation. Chunking and escaping are
    shared, not Telegram-specific.
-8. **Failure isolation.** Each source sync runs independently and records to
-   `source_sync`; a failure yields a `PARTIAL` run and a footer, never an empty digest.
+8. **Failure isolation, no execution persistence.** Each source sync runs independently
+   inside the pipeline and contributes to an in-memory `PipelineResult`; a failure yields
+   a `PARTIAL` summary/log and a footer, never an empty digest. Runs, per-source syncs,
+   and deliveries are logged, not written to SQLite.
 9. **Config over rebuild.** Cron, window, sources, DB path, and Telegram credentials are
    environment-driven `@ConfigurationProperties`.
 10. **Vertical first slice.** insitu → store → digest → Telegram is working end-to-end at
@@ -71,13 +73,13 @@ Detailed acceptance criteria, verification, and file lists: `docs/todo.md`.
 - [ ] Task 8: Digest window selection, grouping, and text rendering
 - [ ] Task 9: Notification SPI and message chunker
 - [ ] Task 10: Telegram sender
-- [ ] Task 11: Pipeline orchestration, run history, partial-failure handling
+- [ ] Task 11: Pipeline orchestration, in-memory run summary, partial-failure handling
 
 ### Checkpoint B — Working single-source product
 - [ ] `./gradlew bootRun --args='--digest.dry-run=true --digest.run-on-startup=true'`
   fetches insitu, persists events, logs the rendered digest
 - [ ] With `--digest.dry-run=false` a real Telegram message is delivered
-- [ ] A forced failing source produces a `PARTIAL` run, not a crash
+- [ ] A forced failing source produces a `PARTIAL` run summary, not a crash
 
 ### Phase 3 — Runtime and deployment (`runtime`)
 - [ ] Task 12: Scheduler, startup runner, config properties, Actuator

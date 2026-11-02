@@ -20,7 +20,7 @@ map is a separate gate from approval of this document.
 | Module id | Responsibility | Depends on |
 |---|---|---|
 | `domain` | Canonical `Event` / `EventOccurrence` model, source ids, normalization, dedup key, validation | — |
-| `store` | SQLite schema + Flyway migrations, upsert semantics, source refs, run history | `domain` |
+| `store` | SQLite schema + Flyway migrations, upsert semantics, source refs, canonical event queries | `domain` |
 | `source-insitu` | Adapter for the open `insitu.live` JSON-LD API (canton FR) | `domain` |
 | `source-bka` | Adapter for `bka.ch` HTML (Bern), Selenium fetch + Jsoup parse | `domain` |
 | `source-eventfrog` | Adapter for `eventfrog.ch/de/events/{bern,fribourg}`, Selenium fetch + parse | `domain` |
@@ -79,7 +79,7 @@ redistribution of source data.
 | U2 | The digest is chronological and grouped by day | Items sorted by local start time, day headers with weekday + date, no reordering |
 | U3 | Each item tells me what, when, where, and links to the source | Every item has title, local start (and end if known), venue, city, canonical source URL |
 | U4 | The same event from two sources appears once | Fixture test with the same event from insitu + eventfrog yields one digest item |
-| U5 | A broken source does not silently produce an empty digest | Run marked `PARTIAL`; other sources still delivered; error recorded and surfaced in the message footer |
+| U5 | A broken source does not silently produce an empty digest | Run marked `PARTIAL`; other sources still delivered; error logged and surfaced in the message footer |
 | U6 | I can test the whole pipeline by restarting the container | `digest.run-on-startup=true` runs the full pipeline once at boot and logs the outcome |
 | U7 | I can run it on Unraid without babysitting | Single container, SQLite in a mounted volume, healthcheck, restarts do not lose data |
 | U8 | Later I can add interest-based filtering without rewriting ingestion | Source adapters and `digest` selection are separate modules; categories are stored per event |
@@ -156,7 +156,7 @@ docker compose down
 
 # Inspect the database (host side, volume mounted at ./data)
 sqlite3 data/digest.db '.tables'
-sqlite3 data/digest.db 'select source, status, started_at from digest_run order by id desc limit 5;'
+sqlite3 data/digest.db 'select count(*) from event; select count(*) from event_occurrence;'
 ```
 
 Required environment (`.env`, never committed; `.env.example` is committed):
@@ -216,7 +216,7 @@ source/                      → Gradle project root; ALL source code
     notify/                  → NotificationSender SPI, chunker, DeliveryResult
     notify/telegram/         → Telegram client + sender
     dedup/                   → matcher, canonical merge policy
-    pipeline/                → DigestPipeline, per-source sync isolation, run recording
+    pipeline/                → DigestPipeline, per-source sync isolation, in-memory run summary
     runtime/                 → Application, @ConfigurationProperties, scheduler, startup runner
   src/main/resources/
     application.yml
@@ -244,17 +244,40 @@ event_source_ref     (id, event_id, source, source_event_id, source_url,
                       UNIQUE(source, source_event_id))
 event_occurrence     (id, event_id, start_utc, end_utc, all_day, local_date,
                       UNIQUE(event_id, start_utc))
-digest_run           (id, started_at, finished_at, status, window_from, window_to,
-                      events_selected, error)
-digest_run_item      (digest_run_id, occurrence_id, position)
-notification_delivery(digest_run_id, channel, status, message_count, external_id, error)
-source_sync          (source PK, last_run_at, last_success_at, pages_fetched,
-                      events_seen, status, error)
 ```
 
 All timestamps stored UTC; `local_date` derived in `Europe/Zurich` for grouping. One
 canonical `event` can be referenced by multiple sources; occurrences belong to the
 canonical event.
+
+**Execution state is not persisted.** SQLite stores only canonical event data. A digest
+run, its source-sync outcomes, and notification deliveries exist as an in-memory
+`PipelineResult` plus structured log lines (`digest_run_started`, `source_sync`,
+`digest_run_finished`, `notification_delivery`). There are no `digest_run`,
+`digest_run_item`, `notification_delivery`, or `source_sync` tables.
+
+Consequences, accepted for v1:
+- No cross-restart run history, delivery receipts, or "last successful run" queries.
+  Operators use container logs instead.
+- Delivery is at-most-once per pipeline invocation. If the process dies after Telegram
+  accepts a message but before the run completes, a later startup run can send again;
+  there is no durable idempotency key.
+- Failure isolation still works within a run: each source has its own status, and a
+  `PARTIAL` run still delivers a digest with a footer.
+- Reintroducing durable run/delivery tracking later requires a new Flyway migration and
+  a deliberate retry/idempotency design, not a schema tweak.
+
+**Execution log contract.** These structured lines replace the removed tables:
+
+| Event | Required fields |
+|---|---|
+| `digest_run_started` | `run_id`, `window_from`, `window_to`, enabled sources |
+| `source_sync` | `run_id`, `source`, `status`, `pages_fetched`, `events_seen`, `duration_ms`, `error` |
+| `notification_delivery` | `run_id`, `channel`, `status`, `message_count`, `external_id`, `error` |
+| `digest_run_finished` | `run_id`, `status` (`SUCCESS`/`PARTIAL`/`FAILED`), `events_selected`, `delivered` |
+
+Logs are the operator-facing record; they are not queryable history and may rotate with
+the container. That is accepted for v1.
 
 ---
 
@@ -352,7 +375,8 @@ Rules:
 - Idempotent upserts keyed by `(source, source_event_id)`; repeated runs must not
   duplicate rows.
 - Store UTC; render `Europe/Zurich`; all date arithmetic through injected `Clock`.
-- Record every run in `digest_run` (+ `source_sync` per source) with counts and errors.
+- Emit one structured log line per run and per source with counts, status, and errors;
+  do not persist execution history in SQLite.
 - Isolate failures: a source that throws is logged and marked `FAILED`; remaining
   sources still run and the digest is sent with a footer noting the failure.
 - Escape all source-supplied text before Telegram HTML; truncate long descriptions.
@@ -394,14 +418,16 @@ v1 is done when all of the following hold:
 5. Digest for a 14-day window is chronological, grouped by local day, and each item
    contains title, start time, venue, city, and a working source URL.
 6. Telegram delivery works with messages split under 4096 chars, each part numbered
-   `(n/m)`; delivery outcome persisted in `notification_delivery`.
+   `(n/m)`; the delivery outcome (channel, status, part count, external id/error) is
+   logged in a `notification_delivery` log line.
 7. Duplicate event supplied by two sources appears exactly once (fixture test).
-8. One failing source produces a `PARTIAL` run and a delivered digest with a footer
-   listing the failed source — never an empty digest and never a crash.
+8. One failing source produces a `PARTIAL` run summary and a delivered digest with a
+   footer listing the failed source — never an empty digest and never a crash.
 9. `docker compose up -d --build` on the Unraid host yields a healthy container,
    a persisted DB under the mounted volume, and one startup digest run in the logs.
-10. Restarting the container preserves events and run history; deleting the DB
-    recreates the schema via Flyway and repopulates on the next run.
+10. Restarting the container preserves events; deleting the DB recreates the schema
+    via Flyway and repopulates on the next run. Execution history is intentionally not
+    preserved (logs only).
 11. Cron default `0 0 7 * * MON`, zone `Europe/Zurich`, overridable by env without rebuild.
 12. No secret appears in logs or the image (verified by grep over the built image env and
     a sample run log).
