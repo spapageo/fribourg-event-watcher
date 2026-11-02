@@ -1,0 +1,99 @@
+import org.gradle.testing.jacoco.tasks.JacocoCoverageVerification
+
+plugins {
+    alias(libs.plugins.spring.boot)
+    alias(libs.plugins.spotless)
+    id 'java'
+    id 'jacoco'
+}
+
+group = 'ch.fribourgevents'
+version = '0.1.0-SNAPSHOT'
+description = 'Fribourg & Bern event digest'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(25)
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation platform(libs.spring.boot.bom)
+
+    implementation libs.spring.boot.starter
+    implementation libs.spring.boot.starter.data.jpa
+    implementation libs.spring.boot.starter.webmvc
+    implementation libs.spring.boot.starter.actuator
+    implementation libs.flyway.core
+    implementation libs.jsoup
+    implementation libs.selenium.java
+
+    runtimeOnly libs.flyway.sqlite
+    runtimeOnly libs.sqlite.jdbc
+    runtimeOnly libs.hibernate.community.dialects
+
+    testImplementation libs.spring.boot.starter.test
+    testImplementation libs.wiremock
+    testImplementation libs.archunit.junit5
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+tasks.named('test') {
+    useJUnitPlatform {
+        def included = project.findProperty('includeTags')
+        def excluded = project.findProperty('excludeTags') ?: 'live'
+        if (included) {
+            includeTags included.toString().split(',')
+        } else {
+            excludeTags excluded.toString().split(',')
+        }
+    }
+    testLogging {
+        events 'failed'
+        exceptionFormat 'full'
+    }
+}
+
+jacoco {
+    toolVersion = libs.versions.jacoco.get()
+}
+
+tasks.named('jacocoTestReport') {
+    dependsOn tasks.named('test')
+    reports {
+        xml.required = true
+        html.required = true
+    }
+}
+
+// Wired into `check` once the first production tests exist (Task 2 onward).
+tasks.register('coverageVerification', JacocoCoverageVerification) {
+    dependsOn tasks.named('test')
+    classDirectories.setFrom(
+        sourceSets.main.output.classesDirs.asFileTree.matching {
+            exclude 'ch/fribourgevents/runtime/Application.class'
+        }
+    )
+    violationRules {
+        rule {
+            limit {
+                counter = 'LINE'
+                minimum = 0.80
+            }
+        }
+    }
+}
+
+spotless {
+    java {
+        target 'src/**/*.java'
+        googleJavaFormat(libs.versions.googleJavaFormat.get())
+        removeUnusedImports()
+        trimTrailingWhitespace()
+        endWithNewline()
+    }
+}

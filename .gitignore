@@ -1,0 +1,24 @@
+# Build output
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# OS
+.DS_Store
+
+# Runtime data and secrets
+.env
+data/
+*.db
+*.db-*
+*.sqlite
+*.sqlite-*
+
+# Logs
+*.log
+logs/
