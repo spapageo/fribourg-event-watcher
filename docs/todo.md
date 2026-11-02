@@ -55,17 +55,17 @@ git so checkpoints can be committed.
 domain types with compact-constructor validation and no external dependencies.
 
 **Acceptance criteria:**
-- [ ] `FetchWindow` rejects null components and `from >= to`; `fromDate()` uses the
+- [x] `FetchWindow` rejects null components and `from >= to`; `fromDate()` uses the
       window zone.
-- [ ] `SourceId` has `INSITU("insitu")`, `BKA("bka")`, `EVENTFROG("eventfrog")` and
+- [x] `SourceId` has `INSITU("insitu")`, `BKA("bka")`, `EVENTFROG("eventfrog")` and
       parses from its wire name (unknown → `Optional.empty()` or exception, documented).
-- [ ] `EventStatus` covers `CONFIRMED`, `TENTATIVE`, `CANCELLED`, `UNKNOWN` and maps
+- [x] `EventStatus` covers `CONFIRMED`, `TENTATIVE`, `CANCELLED`, `UNKNOWN` and maps
       case-insensitively from upstream strings.
-- [ ] Unit tests cover every rejection path and mapping.
+- [x] Unit tests cover every rejection path and mapping.
 
 **Verification:**
-- [ ] `./gradlew test --tests 'ch.fribourgevents.domain.*'`
-- [ ] `./gradlew build`
+- [x] `./gradlew test --tests 'ch.fribourgevents.domain.*'`
+- [x] `./gradlew build`
 
 **Dependencies:** Task 1 · **Size:** S
 
@@ -84,20 +84,20 @@ domain types with compact-constructor validation and no external dependencies.
 `EventOccurrence` and `SourceEvent`, with defensive copies and validation.
 
 **Acceptance criteria:**
-- [ ] `EventOccurrence(Instant start, Instant end, boolean allDay)` rejects null start
+- [x] `EventOccurrence(Instant start, Instant end, boolean allDay)` rejects null start
       and `end < start`; `localDate(ZoneId)` returns the zone-local date.
-- [ ] `SourceEvent` requires non-blank `sourceEventId` and `title`, a non-null source,
+- [x] `SourceEvent` requires non-blank `sourceEventId` and `title`, a non-null source,
       and at least one occurrence; it copies `categories`/`occurrences` into unmodifiable
       lists/sets.
-- [ ] Optional fields (`description`, `venueName`, `addressLine`, `city`, `canton`,
+- [x] Optional fields (`description`, `venueName`, `addressLine`, `city`, `canton`,
       coordinates, url, price) are explicitly nullable and documented; `country`
       defaults to `CH`, `status` to `UNKNOWN`.
-- [ ] Tests cover blank title, empty occurrences, `end < start`, defensive copies, and
+- [x] Tests cover blank title, empty occurrences, `end < start`, defensive copies, and
       nullable-field handling.
 
 **Verification:**
-- [ ] `./gradlew test --tests 'ch.fribourgevents.domain.*'`
-- [ ] `./gradlew build`
+- [x] `./gradlew test --tests 'ch.fribourgevents.domain.*'`
+- [x] `./gradlew build`
 
 **Dependencies:** Task 2 · **Size:** S
 
@@ -115,20 +115,20 @@ domain types with compact-constructor validation and no external dependencies.
 the store and matcher.
 
 **Acceptance criteria:**
-- [ ] `Normalizer.title/venue/city` apply: Unicode NFD, strip combining marks,
+- [x] `Normalizer.title/venue/city` apply: Unicode NFD, strip combining marks,
       `ß → ss`, `Locale.ROOT` lowercase, non-alphanumeric → space, collapse whitespace,
       trim.
-- [ ] Normalization is idempotent and stable across JVM runs (no locale/random input).
-- [ ] `DedupKey.of(SourceEvent, ZoneId)` hashes
+- [x] Normalization is idempotent and stable across JVM runs (no locale/random input).
+- [x] `DedupKey.of(SourceEvent, ZoneId)` hashes
       `normalizedTitle|normalizedVenue|normalizedCity|localDateOfFirstOccurrence` with
       SHA-256 and returns 64 lowercase hex chars.
-- [ ] Tests: `"Cinéma – Zéro!"` → `"cinema zero"`, `"L'ÉTÉ  à Fribourg"` →
+- [x] Tests: `"Cinéma – Zéro!"` → `"cinema zero"`, `"L'ÉTÉ  à Fribourg"` →
       `"l ete a fribourg"`, `"Straße"` → `"strasse"`; accent/case variants share a key;
       different dates do not.
 
 **Verification:**
-- [ ] `./gradlew test --tests 'ch.fribourgevents.domain.NormalizerTest' --tests '*DedupKeyTest'`
-- [ ] `./gradlew build`
+- [x] `./gradlew test --tests 'ch.fribourgevents.domain.NormalizerTest' --tests '*DedupKeyTest'`
+- [x] `./gradlew build`
 
 **Dependencies:** Task 3 · **Size:** S
 

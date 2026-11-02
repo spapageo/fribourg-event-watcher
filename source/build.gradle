@@ -1,5 +1,3 @@
-import org.gradle.testing.jacoco.tasks.JacocoCoverageVerification
-
 plugins {
     alias(libs.plugins.spring.boot)
     alias(libs.plugins.spotless)
@@ -70,8 +68,7 @@ tasks.named('jacocoTestReport') {
     }
 }
 
-// Wired into `check` once the first production tests exist (Task 2 onward).
-tasks.register('coverageVerification', JacocoCoverageVerification) {
+tasks.named('jacocoTestCoverageVerification') {
     dependsOn tasks.named('test')
     classDirectories.setFrom(
         sourceSets.main.output.classesDirs.asFileTree.matching {
@@ -86,6 +83,11 @@ tasks.register('coverageVerification', JacocoCoverageVerification) {
             }
         }
     }
+}
+
+tasks.named('check') {
+    dependsOn tasks.named('jacocoTestReport')
+    dependsOn tasks.named('jacocoTestCoverageVerification')
 }
 
 spotless {

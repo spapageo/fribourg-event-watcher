@@ -55,9 +55,9 @@ Detailed acceptance criteria, verification, and file lists: `docs/todo.md`.
 
 ### Phase 1 — Foundation (`domain`, `store`)
 - [x] Task 1: Scaffold Gradle project, toolchain, and quality gates
-- [ ] Task 2: Domain value types and invariants
-- [ ] Task 3: Event and occurrence model
-- [ ] Task 4: Normalization and dedup key
+- [x] Task 2: Domain value types and invariants
+- [x] Task 3: Event and occurrence model
+- [x] Task 4: Normalization and dedup key
 - [ ] Task 5: Flyway V1 schema and JPA entities
 - [ ] Task 6: Store upsert service with idempotency tests
 
