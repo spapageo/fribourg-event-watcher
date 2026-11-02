@@ -58,13 +58,13 @@ Detailed acceptance criteria, verification, and file lists: `docs/todo.md`.
 - [x] Task 2: Domain value types and invariants
 - [x] Task 3: Event and occurrence model
 - [x] Task 4: Normalization and dedup key
-- [ ] Task 5: Flyway V1 schema and JPA entities
-- [ ] Task 6: Store upsert service with idempotency tests
+- [x] Task 5: Flyway V1 schema and JPA entities
+- [x] Task 6: Store upsert service with idempotency tests
 
 ### Checkpoint A — Foundation
-- [ ] `cd source && ./gradlew build` green, no network
-- [ ] Schema validates from an empty temp DB
-- [ ] Re-running upserts creates no duplicates
+- [x] `cd source && ./gradlew build` green, no network
+- [x] Schema validates from an empty temp DB
+- [x] Re-running upserts creates no duplicates
 
 ### Phase 2 — First vertical slice (insitu → digest → Telegram)
 - [ ] Task 7: insitu.live API client and adapter

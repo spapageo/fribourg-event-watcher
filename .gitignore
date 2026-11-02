@@ -1,3 +1,6 @@
+# Tool session state
+.pi/
+
 # Build output
 .gradle/
 build/
@@ -13,7 +16,8 @@ build/
 
 # Runtime data and secrets
 .env
-data/
+data/*
+!data/.gitkeep
 *.db
 *.db-*
 *.sqlite

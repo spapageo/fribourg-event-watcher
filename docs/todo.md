@@ -146,27 +146,32 @@ the store and matcher.
 that satisfy `ddl-auto=validate`.
 
 **Acceptance criteria:**
-- [ ] `V1__init.sql` creates `event`, `event_source_ref`, `event_occurrence`,
+- [x] `V1__init.sql` creates `event`, `event_source_ref`, `event_occurrence`,
       `digest_run`, `digest_run_item`, `notification_delivery`, `source_sync` with the
       constraints and indexes from `docs/SPEC.md` §4.
-- [ ] Timestamps stored as ISO-8601 UTC text; enums as names; `local_date` as
+- [x] Timestamps stored as ISO-8601 UTC text; enums as names; `local_date` as
       `YYYY-MM-DD`; FKs cascade where ownership implies it.
-- [ ] Entities map `event`, `event_source_ref`, `event_occurrence` and validate against
+- [x] Entities map `event`, `event_source_ref`, `event_occurrence` and validate against
       a migrated temp DB.
-- [ ] Flyway runs automatically on startup and in tests.
+- [x] Flyway runs automatically on startup and in tests.
 
 **Verification:**
-- [ ] `./gradlew test --tests 'ch.fribourgevents.store.SchemaValidationTest'`
-- [ ] `sqlite3 build/tmp/test.db '.schema'` (or test-owned equivalent) shows all tables
-- [ ] `./gradlew build`
+- [x] `./gradlew test --tests 'ch.fribourgevents.store.SchemaValidationTest'`
+- [x] store tests create a real temp SQLite file via Flyway and assert `sqlite_master` contents
+- [x] `./gradlew build`
 
 **Dependencies:** Task 4 · **Size:** M
 
 **Files likely touched:**
 - `source/src/main/resources/db/migration/V1__init.sql`
+- `source/src/main/resources/application.yml`
 - `BASE/store/EventEntity.java`
 - `BASE/store/EventSourceRefEntity.java`
 - `BASE/store/EventOccurrenceEntity.java`
+- `BASE/store/InstantText.java`
+- `BASE/store/InstantTextConverter.java`
+- `BASE/store/LocalDateTextConverter.java`
+- `BASE/store/StoreConfiguration.java`
 - `TEST/store/SchemaValidationTest.java`
 
 ---
@@ -177,18 +182,21 @@ that satisfy `ddl-auto=validate`.
 source refs, and occurrences idempotently, and queries occurrences overlapping a window.
 
 **Acceptance criteria:**
-- [ ] Upsert keyed by `(source, source_event_id)`; repeated identical input creates no
+- [x] Upsert keyed by `(source, source_event_id)`; repeated identical input creates no
       new rows and only refreshes `last_seen_at`.
-- [ ] Changed payload updates mutable fields and `payload_hash`.
-- [ ] Occurrences are added/removed to match the payload without violating
-      `unique(event_id, start_utc)`.
-- [ ] `findOccurrencesOverlapping(from, to)` returns occurrences with
-      `start_utc < to AND (end_utc IS NULL OR end_utc >= from)`, ordered by start.
-- [ ] Integration tests use a temp SQLite file + Flyway (no mocks for the DB).
+- [x] Changed payload updates mutable fields and `payload_hash`.
+- [x] Occurrences are added/removed to match the payload without violating
+      `unique(event_id, start_utc)`; a source only removes occurrences when it is the
+      sole source ref, so merged events keep the other source’s showings.
+- [x] `findOccurrencesOverlapping(from, to)` returns occurrences with
+      `start_utc < to AND (start_utc >= from OR (end_utc IS NOT NULL AND end_utc >= from))`,
+      ordered by start; an end-less occurrence is treated as instantaneous so past
+      all-day markers do not reappear.
+- [x] Integration tests use a temp SQLite file + Flyway (no mocks for the DB).
 
 **Verification:**
-- [ ] `./gradlew test --tests 'ch.fribourgevents.store.*'`
-- [ ] `./gradlew build`
+- [x] `./gradlew test --tests 'ch.fribourgevents.store.*'`
+- [x] `./gradlew build`
 
 **Dependencies:** Task 5 · **Size:** M
 
@@ -197,16 +205,19 @@ source refs, and occurrences idempotently, and queries occurrences overlapping a
 - `BASE/store/EventSourceRefRepository.java`
 - `BASE/store/EventOccurrenceRepository.java`
 - `BASE/store/EventStore.java`
+- `BASE/store/PayloadHash.java`
+- `BASE/store/UpsertResult.java`
 - `TEST/store/EventStoreTest.java`
 - `TEST/store/StoreTestApplication.java`
+- `TEST/store/SqliteTestDatabase.java`
 
 ---
 
 ## Checkpoint A — Foundation
 
-- [ ] `cd source && ./gradlew build` green, no network access required
-- [ ] Schema validates from an empty DB and recreates after deletion
-- [ ] Running the same fixture twice leaves row counts unchanged
+- [x] `cd source && ./gradlew build` green, no network access required
+- [x] Schema validates from an empty DB and recreates after deletion
+- [x] Running the same fixture twice leaves row counts unchanged
 - [ ] Review with human before Phase 2
 
 ---

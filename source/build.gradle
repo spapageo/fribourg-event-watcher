@@ -26,6 +26,7 @@ dependencies {
     implementation libs.spring.boot.starter.data.jpa
     implementation libs.spring.boot.starter.webmvc
     implementation libs.spring.boot.starter.actuator
+    implementation libs.spring.boot.starter.flyway
     implementation libs.flyway.core
     implementation libs.jsoup
     implementation libs.selenium.java
@@ -35,6 +36,7 @@ dependencies {
     runtimeOnly libs.hibernate.community.dialects
 
     testImplementation libs.spring.boot.starter.test
+    testImplementation libs.spring.boot.starter.data.jpa.test
     testImplementation libs.wiremock
     testImplementation libs.archunit.junit5
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
