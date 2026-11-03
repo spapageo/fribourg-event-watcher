@@ -1,0 +1,173 @@
+{
+  "@context": "/api/v2/contexts/Event",
+  "@id": "/api/v2/events/agenda-lite",
+  "@type": "Collection",
+  "totalItems": 7,
+  "member": [
+    {
+      "date": "2026_11",
+      "events": [
+        {
+          "@id": "/api/v2/events/armand-niquille-de-memoire-s",
+          "@type": "Event",
+          "id": 12480,
+          "slug": "armand-niquille-de-memoire-s",
+          "name": "Armand Niquille — De mémoire(s)",
+          "event_status": "full",
+          "place": {
+            "@id": "/api/v2/places/place-notre-dame",
+            "@type": "Place",
+            "id": 7,
+            "slug": "place-notre-dame",
+            "name": "Place de Notre Dame 16",
+            "address": "Place de Notre Dame 16",
+            "zip": "1700",
+            "city": "Fribourg",
+            "latitude": 46.8062,
+            "longitude": 7.1625
+          },
+          "categories": [
+            {
+              "@id": "/api/v2/categories/5",
+              "@type": "Category",
+              "id": 5,
+              "label": { "fr": "Arts visuels & design", "de": "Visuelle Künste & Design" }
+            }
+          ],
+          "date_from": "2026-11-07T09:00:00+01:00",
+          "date_to": "2026-11-28T17:00:00+01:00",
+          "next_date": "2026-11-07T09:00:00+01:00",
+          "next_filtered_date": "2026-11-07T09:00:00+01:00",
+          "images": [],
+          "organization": null,
+          "labels": {
+            "name": { "fr": "Armand Niquille — De mémoire(s)", "de": null },
+            "description": { "fr": "<p>Photographies.</p>", "de": null }
+          },
+          "tags": ["photographie"]
+        },
+        {
+          "@id": "/api/v2/events/escargorama-expo-photo-en-plein-air",
+          "@type": "Event",
+          "id": 12100,
+          "slug": "escargorama-expo-photo-en-plein-air",
+          "name": "ESCARGORAMA - Expo photo en plein air",
+          "event_status": "confirmed",
+          "place": {
+            "@id": "/api/v2/places/chemin-des-grottes",
+            "@type": "Place",
+            "id": 88,
+            "slug": "chemin-des-grottes",
+            "name": "Chemin des Grottes",
+            "address": "Chemin des Grottes",
+            "zip": "3280",
+            "city": "Muntelier",
+            "latitude": 46.9395,
+            "longitude": 7.1298
+          },
+          "categories": [],
+          "date_from": "2026-10-03T00:00:00+02:00",
+          "date_to": "2026-11-17T23:45:00+01:00",
+          "next_date": "2026-11-06T00:00:00+01:00",
+          "next_filtered_date": "2026-11-06T00:00:00+01:00",
+          "images": [],
+          "organization": null,
+          "labels": {
+            "name": { "fr": "ESCARGORAMA - Expo photo en plein air", "de": null },
+            "description": { "fr": "<p>Exposition en plein air.</p>", "de": null }
+          },
+          "tags": null
+        },
+        {
+          "@id": "/api/v2/events/philippe-gross-along-the-streets-of-my-soul",
+          "@type": "Event",
+          "id": 12147,
+          "slug": "philippe-gross-along-the-streets-of-my-soul",
+          "name": "Philippe GROSS « Along the streets of my soul »",
+          "event_status": "confirmed",
+          "place": {
+            "@id": "/api/v2/places/galerie-du-temps",
+            "@type": "Place",
+            "id": 3,
+            "slug": "galerie-du-temps",
+            "name": "Galerie du Temps",
+            "enabled": true,
+            "address": "Rue de l'Église 4",
+            "zip": "1700",
+            "city": "Fribourg",
+            "latitude": 46.8059,
+            "longitude": 7.1611
+          },
+          "categories": [],
+          "date_from": "2026-09-24T14:00:00+02:00",
+          "date_to": "2026-11-26T17:30:00+01:00",
+          "next_date": "2026-11-06T14:00:00+01:00",
+          "next_filtered_date": "2026-11-06T14:00:00+01:00",
+          "images": [],
+          "organization": null,
+          "labels": null,
+          "tags": null
+        },
+        {
+          "@id": "/api/v2/events/soiree-passee",
+          "@type": "Event",
+          "id": 999003,
+          "slug": "soiree-passee",
+          "name": "Soirée déjà passée",
+          "event_status": "confirmed",
+          "place": {
+            "@id": "/api/v2/places/nowhere",
+            "@type": "Place",
+            "id": 999,
+            "slug": "nowhere",
+            "name": "Nouveau Monde",
+            "address": "Esplanade de l'Ancienne Gare 3",
+            "zip": "1700",
+            "city": "Fribourg",
+            "latitude": 46.8033,
+            "longitude": 7.1546
+          },
+          "categories": [],
+          "date_from": "2026-10-01T20:00:00+02:00",
+          "date_to": "2026-10-01T22:00:00+02:00",
+          "next_date": "2026-10-01T20:00:00+02:00",
+          "labels": null,
+          "tags": null
+        },
+        {
+          "@id": "/api/v2/events/exposition-lointaine",
+          "@type": "Event",
+          "id": 999004,
+          "slug": "exposition-lointaine",
+          "name": "Exposition lointaine",
+          "event_status": "confirmed",
+          "place": {
+            "@id": "/api/v2/places/musee-far",
+            "@type": "Place",
+            "id": 998,
+            "slug": "musee-far",
+            "name": "Musée lointain",
+            "address": "Grand-Rue 1",
+            "zip": "1630",
+            "city": "Bulle",
+            "latitude": 46.6174,
+            "longitude": 7.0569
+          },
+          "categories": [],
+          "date_from": "2027-03-01T10:00:00+01:00",
+          "date_to": "2027-03-20T17:00:00+01:00",
+          "next_date": "2027-03-01T10:00:00+01:00",
+          "labels": null,
+          "tags": null
+        }
+      ]
+    }
+  ],
+  "view": {
+    "@id": "/api/v2/events/agenda-lite?group_by_month=true&limit=100&page=2",
+    "@type": "PartialCollectionView",
+    "first": "/api/v2/events/agenda-lite?group_by_month=true&limit=100&page=1",
+    "last": "/api/v2/events/agenda-lite?group_by_month=true&limit=100&page=2"
+  },
+  "search": {}
+}

@@ -230,18 +230,18 @@ source refs, and occurrences idempotently, and queries occurrences overlapping a
 the month-grouped JSON-LD response into `SourceEvent`s.
 
 **Acceptance criteria:**
-- [ ] Pages through `/api/events?limit=100&page=N` until `view.last`/last page; hard cap
+- [x] Pages through `/api/events?limit=100&page=N` until `view.last`/last page; hard cap
       60 requests; fails with `SourceFetchException` on non-2xx or malformed top level.
-- [ ] Maps id/slug, name, status, place (name, address, zip, city, lat/lon), dates, and
+- [x] Maps id/slug, name, status, place (name, address, zip, city, lat/lon), dates, and
       source URL into `SourceEvent`.
-- [ ] A malformed item is skipped and logged; it does not abort the page or the source.
-- [ ] Filters out occurrences wholly outside the requested window.
-- [ ] WireMock tests use a saved fixture with two pages and one malformed item.
+- [x] A malformed item is skipped and logged; it does not abort the page or the source.
+- [x] Filters out occurrences wholly outside the requested window.
+- [x] WireMock tests use a saved fixture with two pages and one malformed item.
 
 **Verification:**
-- [ ] `./gradlew test --tests 'ch.fribourgevents.source.insitu.*'`
-- [ ] `./gradlew test -PincludeTags=live -PliveSource=insitu` (manual, network)
-- [ ] `./gradlew build`
+- [x] `./gradlew test --tests 'ch.fribourgevents.source.insitu.*'`
+- [x] `./gradlew test -PincludeTags=live -PliveSource=insitu` (manual, network)
+- [x] `./gradlew build`
 
 **Dependencies:** Task 6 · **Size:** M
 
@@ -252,6 +252,10 @@ the month-grouped JSON-LD response into `SourceEvent`s.
 - `BASE/source/insitu/InsituEventSource.java`
 - `TEST/source/insitu/InsituEventSourceTest.java`
 - `TEST/resources/fixtures/insitu/events-page-1.json`, `events-page-2.json`
+
+**Notes (implementation findings, 2026-11-03):** rows are open days, not events (1310 rows =
+886 events); the run range is mapped to one occurrence so the payload is stable while an
+event runs. Details and quirks: `docs/sources.md`.
 
 ---
 

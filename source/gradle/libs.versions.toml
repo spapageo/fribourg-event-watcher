@@ -28,7 +28,7 @@ hibernate-community-dialects = { module = "org.hibernate.orm:hibernate-community
 jsoup = { module = "org.jsoup:jsoup", version.ref = "jsoup" }
 selenium-java = { module = "org.seleniumhq.selenium:selenium-java", version.ref = "selenium" }
 
-wiremock = { module = "org.wiremock:wiremock", version.ref = "wiremock" }
+wiremock = { module = "org.wiremock:wiremock-standalone", version.ref = "wiremock" }
 archunit-junit5 = { module = "com.tngtech.archunit:archunit-junit5", version.ref = "archunit" }
 
 [plugins]

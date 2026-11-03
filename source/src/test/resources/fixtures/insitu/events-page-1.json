@@ -1,0 +1,185 @@
+{
+  "@context": "/api/v2/contexts/Event",
+  "@id": "/api/v2/events/agenda-lite",
+  "@type": "Collection",
+  "totalItems": 7,
+  "member": [
+    {
+      "date": "2026_11",
+      "events": [
+        {
+          "@id": "/api/v2/events/philippe-gross-along-the-streets-of-my-soul",
+          "@type": "Event",
+          "id": 12147,
+          "slug": "philippe-gross-along-the-streets-of-my-soul",
+          "name": "Philippe GROSS « Along the streets of my soul »",
+          "event_status": "confirmed",
+          "place": {
+            "@id": "/api/v2/places/galerie-du-temps",
+            "@type": "Place",
+            "id": 3,
+            "slug": "galerie-du-temps",
+            "name": "Galerie du Temps",
+            "enabled": true,
+            "address": "Rue de l'Église 4",
+            "zip": "1700",
+            "city": "Fribourg",
+            "region": {
+              "@id": "/api/v2/regions/1",
+              "@type": "Region",
+              "id": 1,
+              "label": { "fr": "Sarine", "de": "Saane" },
+              "hidden": false
+            },
+            "latitude": 46.8059,
+            "longitude": 7.1611
+          },
+          "categories": [
+            {
+              "@id": "/api/v2/categories/5",
+              "@type": "Category",
+              "id": 5,
+              "label": { "fr": "Arts visuels & design", "de": "Visuelle Künste & Design" },
+              "tag_color": "#FFAAFF",
+              "hidden": false,
+              "level": 1
+            }
+          ],
+          "date_from": "2026-09-24T14:00:00+02:00",
+          "date_to": "2026-11-26T17:30:00+01:00",
+          "next_date": "2026-11-05T14:00:00+01:00",
+          "next_filtered_date": "2026-11-05T14:00:00+01:00",
+          "images": [
+            {
+              "@id": "/api/v2/images/8999",
+              "@type": "Image",
+              "id": 8999,
+              "legend": null,
+              "url": "https://admin.insitu.live/img/placeholder.jpg"
+            }
+          ],
+          "organization": {
+            "@id": "/api/v2/organizations/galerie-du-temps",
+            "@type": "Organization",
+            "id": 12,
+            "name": "Galerie du Temps",
+            "latitude": 46.8059,
+            "longitude": 7.1611,
+            "labels": []
+          },
+          "labels": {
+            "name": { "fr": "Philippe GROSS « Along the streets of my soul »", "de": null },
+            "description": {
+              "fr": "<p>Peintures &amp; dessins r&eacute;cents.</p><p>Entr&eacute;e libre.</p>",
+              "de": null
+            }
+          },
+          "tags": null
+        },
+        {
+          "@id": "/api/v2/events/cafe-recit-15",
+          "@type": "Event",
+          "id": 12164,
+          "slug": "cafe-recit-15",
+          "name": "Café-Récit #15",
+          "event_status": "confirmed",
+          "place": {
+            "@id": "/api/v2/places/cafe-recit",
+            "@type": "Place",
+            "id": 41,
+            "slug": "cafe-recit",
+            "name": "Café-Récit",
+            "enabled": true,
+            "address": "Rue de l'Hôpital 2",
+            "zip": "1700",
+            "city": "Fribourg",
+            "latitude": 46.804,
+            "longitude": 7.161
+          },
+          "categories": [
+            {
+              "@id": "/api/v2/categories/17",
+              "@type": "Category",
+              "id": 17,
+              "label": { "fr": "Rencontre & médiation", "de": "Begegnung & Vermittlung" }
+            },
+            {
+              "@id": "/api/v2/categories/5",
+              "@type": "Category",
+              "id": 5,
+              "label": { "fr": "Arts visuels & design", "de": "Visuelle Künste & Design" }
+            }
+          ],
+          "date_from": "2026-11-05T18:00:00+01:00",
+          "date_to": "2026-11-05T19:30:00+01:00",
+          "next_date": "2026-11-05T18:00:00+01:00",
+          "next_filtered_date": "2026-11-05T18:00:00+01:00",
+          "images": [],
+          "organization": {
+            "@id": "/api/v2/organizations/cafe-recit",
+            "@type": "Organization",
+            "id": 44,
+            "name": "Café-Récit",
+            "labels": []
+          },
+          "labels": {
+            "name": { "fr": "Café-Récit #15", "de": null },
+            "description": {
+              "fr": "<p>Une soir&eacute;e de r&eacute;cits autour du <a href=\"https://example.org\">quartier</a>.</p>",
+              "de": null
+            }
+          },
+          "tags": null
+        },
+        {
+          "@id": "/api/v2/events/broken-row",
+          "@type": "Event",
+          "id": 999001,
+          "slug": "broken-row",
+          "event_status": "confirmed",
+          "place": {
+            "@id": "/api/v2/places/nowhere",
+            "@type": "Place",
+            "id": 999,
+            "slug": "nowhere",
+            "name": "Nowhere",
+            "address": "Rue Inconnue 1",
+            "zip": "1700",
+            "city": "Fribourg",
+            "latitude": 46.8,
+            "longitude": 7.15
+          },
+          "categories": [],
+          "date_from": "2026-11-06T20:00:00+01:00",
+          "date_to": "2026-11-06T22:00:00+01:00",
+          "next_date": "2026-11-06T20:00:00+01:00",
+          "labels": { "name": { "fr": null, "de": null }, "description": { "fr": null, "de": null } },
+          "tags": null
+        },
+        {
+          "@id": "/api/v2/events/atelier-ouvert",
+          "@type": "Event",
+          "id": 999002,
+          "slug": "atelier-ouvert",
+          "name": "Atelier ouvert",
+          "event_status": "tentative",
+          "place": null,
+          "categories": [],
+          "date_from": "2026-11-08T10:00:00+01:00",
+          "date_to": "2026-11-08T16:00:00+01:00",
+          "next_date": "2026-11-08T10:00:00+01:00",
+          "labels": null,
+          "tags": null
+        }
+      ]
+    }
+  ],
+  "view": {
+    "@id": "/api/v2/events/agenda-lite?group_by_month=true&limit=100&page=1",
+    "@type": "PartialCollectionView",
+    "first": "/api/v2/events/agenda-lite?group_by_month=true&limit=100&page=1",
+    "last": "/api/v2/events/agenda-lite?group_by_month=true&limit=100&page=2",
+    "next": "/api/v2/events/agenda-lite?group_by_month=true&limit=100&page=2"
+  },
+  "search": {}
+}
