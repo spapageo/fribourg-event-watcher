@@ -51,20 +51,29 @@ public final class InsituClient {
   /**
    * Fetches every agenda page in order and flattens the month groups into rows.
    *
+   * @return the rows plus the number of page requests it took, for the run's source-sync stats
    * @throws SourceFetchException when a request fails, the payload cannot be read, or the request
    *     cap is reached before the last page
    */
-  public List<InsituEvent> fetchAllRows() throws SourceFetchException {
+  public Crawl fetchAllRows() throws SourceFetchException {
     List<InsituEvent> rows = new ArrayList<>();
     for (int page = 1; page <= MAX_REQUESTS; page++) {
       InsituPage parsed = fetchPage(page);
       rows.addAll(parsed.events());
       if (!parsed.hasNext()) {
-        return List.copyOf(rows);
+        return new Crawl(rows, page);
       }
     }
     throw new SourceFetchException(
         "insitu: request cap reached (" + MAX_REQUESTS + " pages) before the last agenda page");
+  }
+
+  /** Rows together with the number of page requests that produced them. */
+  public record Crawl(List<InsituEvent> rows, int pages) {
+
+    public Crawl {
+      rows = List.copyOf(rows);
+    }
   }
 
   private InsituPage fetchPage(int page) throws SourceFetchException {

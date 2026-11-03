@@ -6,6 +6,7 @@ import ch.fribourgevents.domain.FetchWindow;
 import ch.fribourgevents.domain.SourceEvent;
 import ch.fribourgevents.domain.SourceId;
 import ch.fribourgevents.source.EventSource;
+import ch.fribourgevents.source.SourceFetch;
 import ch.fribourgevents.source.SourceFetchException;
 import java.math.BigDecimal;
 import java.net.URI;
@@ -61,9 +62,10 @@ public final class InsituEventSource implements EventSource {
   }
 
   @Override
-  public List<SourceEvent> fetch(FetchWindow window) throws SourceFetchException {
+  public SourceFetch fetch(FetchWindow window) throws SourceFetchException {
     Objects.requireNonNull(window, "window");
-    List<InsituEvent> rows = client.fetchAllRows();
+    InsituClient.Crawl crawl = client.fetchAllRows();
+    List<InsituEvent> rows = crawl.rows();
     Map<Long, InsituEvent> firstRowById = firstRowPerEvent(rows);
 
     List<SourceEvent> events = new ArrayList<>();
@@ -88,7 +90,7 @@ public final class InsituEventSource implements EventSource {
         rows.size(),
         firstRowById.size(),
         events.size());
-    return List.copyOf(events);
+    return new SourceFetch(events, crawl.pages());
   }
 
   /** Keeps the first row per event id; ids are stable, rows only differ in {@code next_date}. */

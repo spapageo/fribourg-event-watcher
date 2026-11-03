@@ -46,6 +46,9 @@ public final class DigestTextRenderer {
     ZoneId zone = window.zone();
 
     if (message.isEmpty()) {
+      if (!message.notes().isEmpty()) {
+        return String.join("\n\n", message.notes());
+      }
       return "No events found between "
           + DAY_MONTH_YEAR.format(window.fromDate())
           + " and "
@@ -61,6 +64,7 @@ public final class DigestTextRenderer {
     if (message.truncated()) {
       blocks.add("+" + message.omittedCount() + " more events not shown.");
     }
+    blocks.addAll(message.notes());
     return String.join("\n\n", blocks);
   }
 

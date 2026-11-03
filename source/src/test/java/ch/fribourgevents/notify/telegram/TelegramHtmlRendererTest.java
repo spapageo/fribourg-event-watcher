@@ -91,6 +91,27 @@ class TelegramHtmlRendererTest {
   }
 
   @Test
+  void rendersAndEscapesFooterNotes() {
+    DigestMessage message =
+        new DigestMessage(
+                WINDOW,
+                List.of(new Day(LocalDate.parse("2026-11-03"), List.of(ongoingItem()))),
+                1,
+                0)
+            .withNotes(List.of("Source unavailable: bka & eventfrog"));
+
+    assertThat(renderer.render(message)).endsWith("\n\nSource unavailable: bka &amp; eventfrog");
+  }
+
+  @Test
+  void rendersANotesOnlyMessageAsTheNotes() {
+    DigestMessage notice =
+        new DigestMessage(WINDOW, List.of(), 0, 0, List.of("Digest failed: <no source>"));
+
+    assertThat(renderer.render(notice)).isEqualTo("Digest failed: &lt;no source&gt;");
+  }
+
+  @Test
   void escapesQuotesInAttributes() {
     assertThat(TelegramHtmlRenderer.escapeAttribute("\"a'b\"")).isEqualTo("&quot;a&#39;b&quot;");
     assertThat(TelegramHtmlRenderer.escapeAttribute("a&b<c>d")).isEqualTo("a&amp;b&lt;c&gt;d");

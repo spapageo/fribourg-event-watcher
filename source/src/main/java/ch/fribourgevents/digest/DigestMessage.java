@@ -21,12 +21,24 @@ import java.util.Objects;
  *
  * <p>{@code itemCount} is the number of items present, {@code omittedCount} the number the cap
  * dropped. Both are derived, never edited by callers.
+ *
+ * <p>{@code notes} are footer paragraphs the pipeline adds after the events — a failed-source
+ * warning, later a dedup summary. Renderers print them verbatim (escaping for their transport), so
+ * a notes-only message (no days) renders as the notes alone instead of a misleading "no events"
+ * line.
  */
-public record DigestMessage(FetchWindow window, List<Day> days, int itemCount, int omittedCount) {
+public record DigestMessage(
+    FetchWindow window, List<Day> days, int itemCount, int omittedCount, List<String> notes) {
 
   public DigestMessage {
     Objects.requireNonNull(window, "window");
     days = List.copyOf(days);
+    notes = List.copyOf(Objects.requireNonNull(notes, "notes"));
+    for (String note : notes) {
+      if (note == null || note.isBlank()) {
+        throw new IllegalArgumentException("notes must not contain blanks");
+      }
+    }
     if (itemCount < 0) {
       throw new IllegalArgumentException("itemCount must not be negative");
     }
@@ -36,6 +48,16 @@ public record DigestMessage(FetchWindow window, List<Day> days, int itemCount, i
     if (itemCount != days.stream().mapToInt(day -> day.items().size()).sum()) {
       throw new IllegalArgumentException("itemCount must equal the number of items in days");
     }
+  }
+
+  /** A message without footer notes; the common case outside the pipeline. */
+  public DigestMessage(FetchWindow window, List<Day> days, int itemCount, int omittedCount) {
+    this(window, days, itemCount, omittedCount, List.of());
+  }
+
+  /** Same digest with different footer notes. */
+  public DigestMessage withNotes(List<String> notes) {
+    return new DigestMessage(window, days, itemCount, omittedCount, notes);
   }
 
   /** One local calendar day of the window; never empty. */
@@ -130,6 +152,6 @@ public record DigestMessage(FetchWindow window, List<Day> days, int itemCount, i
         grouped.entrySet().stream()
             .map(entry -> new Day(entry.getKey(), entry.getValue()))
             .toList();
-    return new DigestMessage(window, days, included.size(), omitted);
+    return new DigestMessage(window, days, included.size(), omitted, List.of());
   }
 }

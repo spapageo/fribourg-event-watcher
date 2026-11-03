@@ -14,6 +14,7 @@ import ch.fribourgevents.domain.EventStatus;
 import ch.fribourgevents.domain.FetchWindow;
 import ch.fribourgevents.domain.SourceEvent;
 import ch.fribourgevents.domain.SourceId;
+import ch.fribourgevents.source.SourceFetch;
 import ch.fribourgevents.source.SourceFetchException;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
@@ -62,7 +63,7 @@ class InsituEventSourceTest {
     stubPage(1, "events-page-1.json");
     stubPage(2, "events-page-2.json");
 
-    List<SourceEvent> events = source.fetch(WINDOW);
+    List<SourceEvent> events = source.fetch(WINDOW).events();
 
     assertThat(source.id()).isEqualTo(SourceId.INSITU);
     assertThat(events)
@@ -97,7 +98,7 @@ class InsituEventSourceTest {
     stubPage(1, "events-page-1.json");
     stubPage(2, "events-page-2.json");
 
-    List<SourceEvent> events = source.fetch(WINDOW);
+    List<SourceEvent> events = source.fetch(WINDOW).events();
 
     assertThat(event(events, "12164").description())
         .isEqualTo("Une soirée de récits autour du quartier.");
@@ -111,7 +112,7 @@ class InsituEventSourceTest {
     stubPage(1, "events-page-1.json");
     stubPage(2, "events-page-2.json");
 
-    List<SourceEvent> events = source.fetch(WINDOW);
+    List<SourceEvent> events = source.fetch(WINDOW).events();
 
     // Event 12147 is listed once per open day across both pages.
     assertThat(events).filteredOn(e -> e.sourceEventId().equals("12147")).hasSize(1);
@@ -128,7 +129,7 @@ class InsituEventSourceTest {
     stubPage(1, "events-page-1.json");
     stubPage(2, "events-page-2.json");
 
-    List<SourceEvent> events = source.fetch(WINDOW);
+    List<SourceEvent> events = source.fetch(WINDOW).events();
 
     assertThat(event(events, "12100").occurrences())
         .containsExactly(
@@ -143,7 +144,7 @@ class InsituEventSourceTest {
     stubPage(1, "events-page-1.json");
     stubPage(2, "events-page-2.json");
 
-    List<SourceEvent> events = source.fetch(WINDOW);
+    List<SourceEvent> events = source.fetch(WINDOW).events();
 
     assertThat(events).extracting(SourceEvent::sourceEventId).doesNotContain("999001");
     // The next row of the same page is still ingested.
@@ -155,7 +156,7 @@ class InsituEventSourceTest {
     stubPage(1, "events-page-1.json");
     stubPage(2, "events-page-2.json");
 
-    List<SourceEvent> events = source.fetch(WINDOW);
+    List<SourceEvent> events = source.fetch(WINDOW).events();
 
     SourceEvent withoutPlace = event(events, "999002");
     assertThat(withoutPlace.venueName()).isNull();
@@ -171,7 +172,7 @@ class InsituEventSourceTest {
     stubPage(1, "events-page-1.json");
     stubPage(2, "events-page-2.json");
 
-    List<SourceEvent> events = source.fetch(WINDOW);
+    List<SourceEvent> events = source.fetch(WINDOW).events();
 
     assertThat(events).extracting(SourceEvent::sourceEventId).doesNotContain("999003", "999004");
   }
@@ -181,7 +182,7 @@ class InsituEventSourceTest {
     stubPage(1, "events-page-1.json");
     stubPage(2, "events-page-2.json");
 
-    List<SourceEvent> events = source.fetch(WINDOW);
+    List<SourceEvent> events = source.fetch(WINDOW).events();
 
     assertThat(event(events, "12480").status()).isEqualTo(EventStatus.UNKNOWN);
   }
@@ -192,8 +193,9 @@ class InsituEventSourceTest {
     stubPage(1, "events-page-1.json");
     stubPage(2, "events-page-2.json");
 
-    source.fetch(WINDOW);
+    SourceFetch fetch = source.fetch(WINDOW);
 
+    assertThat(fetch.pagesFetched()).isEqualTo(2);
     server.verify(2, getRequestedFor(urlPathEqualTo(EVENTS_PATH)));
     server.verify(
         getRequestedFor(urlPathEqualTo(EVENTS_PATH))
@@ -207,7 +209,7 @@ class InsituEventSourceTest {
     server.stubFor(
         get(urlPathEqualTo(EVENTS_PATH)).willReturn(aResponse().withStatus(500).withBody("boom")));
 
-    assertThatThrownBy(() -> source.fetch(WINDOW))
+    assertThatThrownBy(() -> source.fetch(WINDOW).events())
         .isInstanceOf(SourceFetchException.class)
         .hasMessageContaining("insitu");
   }
@@ -216,7 +218,7 @@ class InsituEventSourceTest {
   void rejectsMalformedTopLevelPayload() {
     server.stubFor(get(urlPathEqualTo(EVENTS_PATH)).willReturn(okJson("{}")));
 
-    assertThatThrownBy(() -> source.fetch(WINDOW))
+    assertThatThrownBy(() -> source.fetch(WINDOW).events())
         .isInstanceOf(SourceFetchException.class)
         .hasMessageContaining("insitu");
   }
@@ -227,7 +229,7 @@ class InsituEventSourceTest {
         get(urlPathEqualTo(EVENTS_PATH))
             .willReturn(okJson("{\"member\":[],\"view\":{\"last\":\"page=1\"}}")));
 
-    assertThat(source.fetch(WINDOW)).isEmpty();
+    assertThat(source.fetch(WINDOW).events()).isEmpty();
   }
 
   @Test
@@ -236,7 +238,7 @@ class InsituEventSourceTest {
     server.stubFor(
         get(urlPathEqualTo(EVENTS_PATH)).willReturn(okJson(fixture("events-page-1.json"))));
 
-    assertThatThrownBy(() -> source.fetch(WINDOW))
+    assertThatThrownBy(() -> source.fetch(WINDOW).events())
         .isInstanceOf(SourceFetchException.class)
         .hasMessageContaining("cap");
     assertThat(server.findAll(getRequestedFor(urlPathEqualTo(EVENTS_PATH)))).hasSize(60);

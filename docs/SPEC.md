@@ -301,9 +301,15 @@ public interface EventSource {
 
     SourceId id();
 
-    /** Returns every event with an occurrence intersecting {@code window}. */
-    List<SourceEvent> fetch(FetchWindow window) throws SourceFetchException;
+    /**
+     * Returns every event intersecting {@code window}, plus the upstream page count
+     * the pipeline logs on its {@code source_sync} line.
+     */
+    SourceFetch fetch(FetchWindow window) throws SourceFetchException;
 }
+
+/** {@code events} in upstream order; {@code pagesFetched} for the run log. */
+public record SourceFetch(List<SourceEvent> events, int pagesFetched) {}
 ```
 
 ```java

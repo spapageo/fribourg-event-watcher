@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import ch.fribourgevents.domain.FetchWindow;
 import ch.fribourgevents.domain.SourceEvent;
+import ch.fribourgevents.source.SourceFetch;
 import ch.fribourgevents.source.SourceFetchException;
 import java.time.Duration;
 import java.time.Instant;
@@ -35,9 +36,15 @@ class InsituLiveTest {
     InsituEventSource source =
         new InsituEventSource(new InsituClient(BASE_URL, RestClient.create()));
 
-    List<SourceEvent> events = source.fetch(window);
+    SourceFetch fetch = source.fetch(window);
+    List<SourceEvent> events = fetch.events();
 
-    log.info("insitu live: {} events inside {}..{}", events.size(), window.from(), window.to());
+    log.info(
+        "insitu live: {} events from {} pages inside {}..{}",
+        events.size(),
+        fetch.pagesFetched(),
+        window.from(),
+        window.to());
     assertThat(events).isNotEmpty();
     assertThat(events)
         .allSatisfy(event -> {

@@ -371,24 +371,24 @@ returns an in-memory run summary, emits structured logs, and isolates per-source
 failures. Execution history is not written to SQLite.
 
 **Acceptance criteria:**
-- [ ] Returns a `PipelineResult` with run status, window, selected occurrence ids,
+- [x] Returns a `PipelineResult` with run status, window, selected occurrence ids,
       per-source outcomes, and delivery result; logs one `digest_run_started`,
       one `source_sync` per source, one `notification_delivery`, and one
       `digest_run_finished` line. No `digest_run`, `digest_run_item`,
       `notification_delivery`, or `source_sync` rows are written.
-- [ ] Runs enabled sources independently; one throwing → `PARTIAL`, others still
+- [x] Runs enabled sources independently; one throwing → `PARTIAL`, others still
       delivered, failed sources named in the footer.
-- [ ] All sources failing → run `FAILED`, no misleading empty digest (send a short
+- [x] All sources failing → run `FAILED`, no misleading empty digest (send a short
       failure notice only if configured).
 - [ ] `dry-run` renders and logs without sending; `run-on-startup` invokes the pipeline.
-- [ ] Source outcomes carry timestamps, page/event counts, status, and error in memory
+- [x] Source outcomes carry timestamps, page/event counts, status, and error in memory
       and logs only.
-- [ ] Integration test uses fake sources + fake notifier against a real temp SQLite DB
+- [x] Integration test uses fake sources + fake notifier against a real temp SQLite DB
       and asserts that only event data tables change.
 
 **Verification:**
-- [ ] `./gradlew test --tests 'ch.fribourgevents.pipeline.*'`
-- [ ] `./gradlew build`
+- [x] `./gradlew test --tests 'ch.fribourgevents.pipeline.*'`
+- [x] `./gradlew build`
 
 **Dependencies:** Tasks 7, 8, 9, 10 · **Size:** M
 
@@ -399,6 +399,17 @@ failures. Execution history is not written to SQLite.
 - `TEST/pipeline/DigestPipelineTest.java`
 - `TEST/pipeline/FakeEventSource.java`
 - `TEST/pipeline/FakeNotificationSender.java`
+
+**Notes (implementation, 2026-11-03):** `dry-run` is done (`PipelineOptions.dryRun` renders
+and logs, emits a `dry-run`/`SKIPPED` delivery line); `run-on-startup` stays open because the
+startup runner and its properties are Task 12 — the pipeline is already invocation-agnostic,
+so Task 12 only wires it. Two contract changes fell out of the `source_sync` log: `EventSource`
+now returns `SourceFetch(events, pagesFetched)` (the insitu client exposes its page count), and
+`DigestMessage` gained `notes` so the pipeline can add a failed-source footer without breaking
+the notify/digest boundary; a notes-only message renders as the failure notice instead of a
+misleading "no events" line. `PipelineOptions.sendFailureNotice` is the "only if configured"
+switch. The integration test uses a `@DataJpaTest` slice plus a real temp SQLite file (same
+setup as `DigestServiceTest`) instead of booting the whole application.
 
 ---
 

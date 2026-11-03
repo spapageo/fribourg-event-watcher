@@ -49,6 +49,10 @@ final class TelegramHtmlRenderer {
     ZoneId zone = window.zone();
 
     if (message.isEmpty()) {
+      if (!message.notes().isEmpty()) {
+        return String.join(
+            "\n\n", message.notes().stream().map(TelegramHtmlRenderer::escape).toList());
+      }
       return "No events found between "
           + DAY_MONTH_YEAR.format(window.fromDate())
           + " and "
@@ -63,6 +67,9 @@ final class TelegramHtmlRenderer {
     }
     if (message.truncated()) {
       blocks.add("+" + message.omittedCount() + " more events not shown.");
+    }
+    for (String note : message.notes()) {
+      blocks.add(escape(note));
     }
     return String.join("\n\n", blocks);
   }

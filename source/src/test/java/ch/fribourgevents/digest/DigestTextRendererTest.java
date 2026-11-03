@@ -207,6 +207,29 @@ class DigestTextRendererTest {
   }
 
   @Test
+  void rendersFooterNotesAfterTheEvents() {
+    DigestMessage message =
+        DigestMessage.build(
+                WINDOW,
+                List.of(
+                    item(1L, 10L, "2026-11-03T18:00:00Z", null, false, "One", null, null, null)),
+                150)
+            .withNotes(List.of("Source unavailable this run: bka."));
+
+    assertThat(renderer.render(message))
+        .endsWith("19:00 · One\n\nSource unavailable this run: bka.");
+  }
+
+  @Test
+  void rendersANotesOnlyMessageInsteadOfTheNoEventsLine() {
+    DigestMessage notice =
+        new DigestMessage(
+            WINDOW, List.of(), 0, 0, List.of("Digest failed: no source could be read."));
+
+    assertThat(renderer.render(notice)).isEqualTo("Digest failed: no source could be read.");
+  }
+
+  @Test
   void collapsesWhitespaceInUpstreamTextSoEveryItemStaysOnItsLines() {
     DigestMessage message =
         DigestMessage.build(

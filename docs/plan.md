@@ -73,7 +73,7 @@ Detailed acceptance criteria, verification, and file lists: `docs/todo.md`.
 - [x] Task 8: Digest window selection, grouping, and text rendering
 - [x] Task 9: Notification SPI and message chunker
 - [x] Task 10: Telegram sender
-- [ ] Task 11: Pipeline orchestration, in-memory run summary, partial-failure handling
+- [x] Task 11: Pipeline orchestration, in-memory run summary, partial-failure handling
 
 ### Checkpoint B — Working single-source product
 - [ ] `./gradlew bootRun --args='--digest.dry-run=true --digest.run-on-startup=true'`
