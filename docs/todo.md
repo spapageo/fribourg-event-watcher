@@ -265,17 +265,17 @@ event runs. Details and quirks: `docs/sources.md`.
 and render a plain-text digest model that any channel can format.
 
 **Acceptance criteria:**
-- [ ] `DigestService.select(window)` returns events sorted by local start time then
+- [x] `DigestService.select(window)` returns events sorted by local start time then
       title; multi-occurrence events appear once per occurrence.
-- [ ] Output groups by `Europe/Zurich` local date with weekday/date headers.
-- [ ] Each item includes title, time (or `all day`), venue, city, and source URL.
-- [ ] Item cap 150 with a "more events" footer; empty window renders a single
+- [x] Output groups by `Europe/Zurich` local date with weekday/date headers.
+- [x] Each item includes title, time (or `all day`), venue, city, and source URL.
+- [x] Item cap 150 with a "more events" footer; empty window renders a single
       "no events" message.
-- [ ] Rendering is deterministic and free of HTML (plain text only).
+- [x] Rendering is deterministic and free of HTML (plain text only).
 
 **Verification:**
-- [ ] `./gradlew test --tests 'ch.fribourgevents.digest.*'`
-- [ ] `./gradlew build`
+- [x] `./gradlew test --tests 'ch.fribourgevents.digest.*'`
+- [x] `./gradlew build`
 
 **Dependencies:** Task 6 · **Size:** M
 
@@ -285,6 +285,12 @@ and render a plain-text digest model that any channel can format.
 - `BASE/digest/DigestTextRenderer.java`
 - `TEST/digest/DigestServiceTest.java`
 - `TEST/digest/DigestTextRendererTest.java`
+
+**Notes (implementation, 2026-11-03):** occurrences that started before the window are
+grouped under the window's first day and labelled `ongoing`, so a running exhibition
+never produces a day header outside the window. `DigestServiceTest` runs against a real
+temp SQLite database (the selection reads through `EventStore`), so
+`SqliteTestDatabase` moved to test-wide visibility.
 
 ---
 

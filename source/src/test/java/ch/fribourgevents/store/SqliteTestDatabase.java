@@ -5,12 +5,12 @@ import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-/** Creates a real temporary SQLite database file for store integration tests. */
-final class SqliteTestDatabase {
+/** Creates a real temporary SQLite database file for store and digest integration tests. */
+public final class SqliteTestDatabase {
 
   private SqliteTestDatabase() {}
 
-  static Path create(String prefix) {
+  public static Path create(String prefix) {
     try {
       return Files.createTempFile("fribourg-events-" + prefix + "-", ".db");
     } catch (IOException e) {
@@ -18,11 +18,11 @@ final class SqliteTestDatabase {
     }
   }
 
-  static String url(Path file) {
+  public static String url(Path file) {
     return "jdbc:sqlite:" + file.toAbsolutePath() + "?foreign_keys=on&busy_timeout=5000";
   }
 
-  static void delete(Path file) {
+  public static void delete(Path file) {
     try {
       Files.deleteIfExists(file);
     } catch (IOException ignored) {
