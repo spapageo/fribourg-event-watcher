@@ -168,10 +168,19 @@ DIGEST_CRON=0 0 7 * * MON
 DIGEST_ZONE=Europe/Zurich
 DIGEST_WINDOW_DAYS=14
 DIGEST_RUN_ON_STARTUP=true
+DIGEST_DRY_RUN=false
+DIGEST_SEND_FAILURE_NOTICE=false
 SOURCE_INSITU_ENABLED=true
 SOURCE_BKA_ENABLED=true
 SOURCE_EVENTFROG_ENABLED=true
 DB_PATH=../data/digest.db   # local dev (from source/); container uses /data/digest.db
+
+# Optional tuning (defaults shown)
+TELEGRAM_API_BASE_URL=https://api.telegram.org
+TELEGRAM_PART_LIMIT=4000
+DIGEST_HTTP_TIMEOUT=10s
+DIGEST_RATE_LIMIT_PER_SECOND=1
+DIGEST_MAX_REQUESTS_PER_RUN=60
 ```
 
 ---

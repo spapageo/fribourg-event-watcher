@@ -31,6 +31,8 @@ class ApplicationStartupTest {
   @DynamicPropertySource
   static void database(DynamicPropertyRegistry registry) {
     registry.add("DB_PATH", () -> DB_FILE.toAbsolutePath().toString());
+    // The context boots without Telegram credentials by design; a dry run must not need them.
+    registry.add("digest.dry-run", () -> "true");
   }
 
   @Autowired private EventStore store;

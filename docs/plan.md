@@ -76,13 +76,13 @@ Detailed acceptance criteria, verification, and file lists: `docs/todo.md`.
 - [x] Task 11: Pipeline orchestration, in-memory run summary, partial-failure handling
 
 ### Checkpoint B — Working single-source product
-- [ ] `./gradlew bootRun --args='--digest.dry-run=true --digest.run-on-startup=true'`
+- [x] `./gradlew bootRun --args='--digest.dry-run=true --digest.run-on-startup=true'`
   fetches insitu, persists events, logs the rendered digest
 - [ ] With `--digest.dry-run=false` a real Telegram message is delivered
-- [ ] A forced failing source produces a `PARTIAL` run summary, not a crash
+- [x] A forced failing source produces a `PARTIAL` run summary, not a crash
 
 ### Phase 3 — Runtime and deployment (`runtime`)
-- [ ] Task 12: Scheduler, startup runner, config properties, Actuator
+- [x] Task 12: Scheduler, startup runner, config properties, Actuator
 - [ ] Task 13: Docker image (JRE + Chromium), compose, healthcheck, volume
 
 ### Checkpoint C — Deployable

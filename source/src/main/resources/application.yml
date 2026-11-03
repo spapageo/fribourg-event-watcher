@@ -2,7 +2,7 @@ spring:
   application:
     name: fribourg-events-digest
   datasource:
-    url: jdbc:sqlite:${DB_PATH:../data/digest.db}?journal_mode=WAL&busy_timeout=5000&foreign_keys=on
+    url: jdbc:sqlite:${digest.db-path}?journal_mode=WAL&busy_timeout=5000&foreign_keys=on
     driver-class-name: org.sqlite.JDBC
     hikari:
       maximum-pool-size: 1
@@ -21,5 +21,38 @@ spring:
     enabled: true
     locations: classpath:db/migration
 
+# Actuator: health and info only. There is no inbound digest-trigger endpoint.
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: never
+
 digest:
-  zone: ${DIGEST_ZONE:Europe/Zurich}
+  cron: "${DIGEST_CRON:0 0 7 * * MON}"
+  zone: "${DIGEST_ZONE:Europe/Zurich}"
+  window-days: ${DIGEST_WINDOW_DAYS:14}
+  run-on-startup: ${DIGEST_RUN_ON_STARTUP:false}
+  dry-run: ${DIGEST_DRY_RUN:false}
+  send-failure-notice: ${DIGEST_SEND_FAILURE_NOTICE:false}
+  db-path: ${DB_PATH:../data/digest.db}
+  http:
+    request-timeout: ${DIGEST_HTTP_TIMEOUT:10s}
+  rate-limit:
+    per-second: ${DIGEST_RATE_LIMIT_PER_SECOND:1}
+    max-per-run: ${DIGEST_MAX_REQUESTS_PER_RUN:60}
+  telegram:
+    bot-token: ${TELEGRAM_BOT_TOKEN:}
+    chat-id: ${TELEGRAM_CHAT_ID:}
+    base-url: ${TELEGRAM_API_BASE_URL:https://api.telegram.org}
+    part-limit: ${TELEGRAM_PART_LIMIT:4000}
+  sources:
+    insitu:
+      enabled: ${SOURCE_INSITU_ENABLED:true}
+    bka:
+      enabled: ${SOURCE_BKA_ENABLED:true}
+    eventfrog:
+      enabled: ${SOURCE_EVENTFROG_ENABLED:true}

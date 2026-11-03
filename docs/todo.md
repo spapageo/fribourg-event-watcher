@@ -380,7 +380,7 @@ failures. Execution history is not written to SQLite.
       delivered, failed sources named in the footer.
 - [x] All sources failing → run `FAILED`, no misleading empty digest (send a short
       failure notice only if configured).
-- [ ] `dry-run` renders and logs without sending; `run-on-startup` invokes the pipeline.
+- [x] `dry-run` renders and logs without sending; `run-on-startup` invokes the pipeline.
 - [x] Source outcomes carry timestamps, page/event counts, status, and error in memory
       and logs only.
 - [x] Integration test uses fake sources + fake notifier against a real temp SQLite DB
@@ -401,9 +401,8 @@ failures. Execution history is not written to SQLite.
 - `TEST/pipeline/FakeNotificationSender.java`
 
 **Notes (implementation, 2026-11-03):** `dry-run` is done (`PipelineOptions.dryRun` renders
-and logs, emits a `dry-run`/`SKIPPED` delivery line); `run-on-startup` stays open because the
-startup runner and its properties are Task 12 — the pipeline is already invocation-agnostic,
-so Task 12 only wires it. Two contract changes fell out of the `source_sync` log: `EventSource`
+and logs, emits a `dry-run`/`SKIPPED` delivery line); `run-on-startup` was closed by Task 12
+(`StartupRunner` + `StartupRunIntegrationTest`). Two contract changes fell out of the `source_sync` log: `EventSource`
 now returns `SourceFetch(events, pagesFetched)` (the insitu client exposes its page count), and
 `DigestMessage` gained `notes` so the pipeline can add a failed-source footer without breaking
 the notify/digest boundary; a notes-only message renders as the failure notice instead of a
@@ -415,10 +414,11 @@ setup as `DigestServiceTest`) instead of booting the whole application.
 
 ## Checkpoint B — Working single-source product
 
-- [ ] `./gradlew bootRun --args='--digest.dry-run=true --digest.run-on-startup=true'`
+- [x] `./gradlew bootRun --args='--digest.dry-run=true --digest.run-on-startup=true'`
       logs a rendered insitu digest and persists events
 - [ ] Dry-run off delivers a real Telegram message
-- [ ] Forced source failure yields `PARTIAL` + footer, not a crash
+- [x] Forced source failure yields `PARTIAL` + footer, not a crash (covered by
+      `DigestPipelineTest`; not re-run against a live source)
 - [ ] Review with human before Phase 3
 
 ---
@@ -431,19 +431,19 @@ setup as `DigestServiceTest`) instead of booting the whole application.
 cron scheduling, one startup run, and health endpoints.
 
 **Acceptance criteria:**
-- [ ] `@ConfigurationProperties` binds cron, zone, window days, source toggles, DB path,
+- [x] `@ConfigurationProperties` binds cron, zone, window days, source toggles, DB path,
       Telegram settings, rate limits; invalid values fail startup with a clear message.
-- [ ] `@Scheduled(cron = "${digest.cron}", zone = "${digest.zone}")` uses defaults
+- [x] `@Scheduled(cron = "${digest.cron}", zone = "${digest.zone}")` uses defaults
       `0 0 7 * * MON` / `Europe/Zurich`.
-- [ ] Startup runner executes once when enabled and cannot overlap a scheduled run.
-- [ ] Actuator exposes only `health` and `info`; no inbound digest trigger endpoint.
-- [ ] Tests cover property binding, invalid config, and startup-run-once semantics.
+- [x] Startup runner executes once when enabled and cannot overlap a scheduled run.
+- [x] Actuator exposes only `health` and `info`; no inbound digest trigger endpoint.
+- [x] Tests cover property binding, invalid config, and startup-run-once semantics.
 
 **Verification:**
-- [ ] `./gradlew test --tests 'ch.fribourgevents.runtime.*'`
-- [ ] `./gradlew bootRun --args='--digest.dry-run=true --digest.run-on-startup=true'`
-- [ ] `curl localhost:8080/actuator/health`
-- [ ] `./gradlew build`
+- [x] `./gradlew test --tests 'ch.fribourgevents.runtime.*'`
+- [x] `./gradlew bootRun --args='--digest.dry-run=true --digest.run-on-startup=true'`
+- [x] `curl localhost:8080/actuator/health`
+- [x] `./gradlew build`
 
 **Dependencies:** Task 11 · **Size:** M
 
@@ -453,6 +453,19 @@ cron scheduling, one startup run, and health endpoints.
 - `BASE/runtime/DigestScheduler.java`
 - `BASE/runtime/StartupRunner.java`
 - `source/src/main/resources/application.yml`
+
+**Notes (implementation, 2026-11-03):** `RuntimeConfiguration` (extra file) wires the
+`RestClient`, Telegram sender (a refusing stub in dry-run so the app boots without
+credentials), the insitu source, and the filtered `DigestPipeline`. `DigestProperties`
+validates every value in its compact constructor — Spring passes `null`/`0` for absent
+properties, so default-able fields are boxed and normalised before checks. `zone` stays a
+`String` in the record (the `@Scheduled` annotation and `StoreConfiguration` need the raw
+value). `DigestScheduler.runOrSkip` owns a `ReentrantLock`, which both prevents overlap and
+keeps the scheduler thread alive if a run throws. `bootRun` verification was a real run:
+44 pages / 179 insitu events in the 14-day window, 150 selected (cap), dry-run digest
+logged, events persisted (`event=174`, `event_source_ref=179`, `event_occurrence=179`),
+only canonical tables present. Actuator returned `200 {"status":"UP"}` for health and 404
+for `/actuator/env`.
 
 ---
 
