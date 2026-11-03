@@ -335,16 +335,16 @@ the chunker re-packs when the suffix grows a digit.
 escaping, chunked sending, and retry policy.
 
 **Acceptance criteria:**
-- [ ] Posts `sendMessage` with `chat_id`, `parse_mode=HTML`, `disable_web_page_preview`.
-- [ ] All upstream text is HTML-escaped; only adapter-generated tags are emitted.
-- [ ] 429 honors `retry_after` (bounded); 5xx retried twice with backoff; 4xx fails
+- [x] Posts `sendMessage` with `chat_id`, `parse_mode=HTML`, `disable_web_page_preview`.
+- [x] All upstream text is HTML-escaped; only adapter-generated tags are emitted.
+- [x] 429 honors `retry_after` (bounded); 5xx retried twice with backoff; 4xx fails
       fast with a redacted error (no token in message/log).
-- [ ] WireMock tests cover success, 429, 5xx-then-success, 400, and multi-part sending.
+- [x] WireMock tests cover success, 429, 5xx-then-success, 400, and multi-part sending.
 
 **Verification:**
-- [ ] `./gradlew test --tests 'ch.fribourgevents.notify.telegram.*'`
+- [x] `./gradlew test --tests 'ch.fribourgevents.notify.telegram.*'`
 - [ ] `./gradlew test -PincludeTags=live -PliveSource=telegram` (manual, real chat)
-- [ ] `./gradlew build`
+- [x] `./gradlew build`
 
 **Dependencies:** Task 9 · **Size:** M
 
@@ -353,6 +353,14 @@ escaping, chunked sending, and retry policy.
 - `BASE/notify/telegram/TelegramClient.java`
 - `BASE/notify/telegram/TelegramNotificationSender.java`
 - `TEST/notify/telegram/TelegramNotificationSenderTest.java`
+
+**Notes (implementation, 2026-11-03):** the sender renders its own Telegram HTML
+(`TelegramHtmlRenderer`) because `notify` depends only on the digest *message* type; the
+layout mirrors `DigestTextRenderer` field-for-field so the two cannot drift visually
+without a test failing. Retries are bounded at two per failure kind, `retry_after` is
+capped at 30 s, and the client takes an injectable `Sleeper` so no test sleeps. API error
+descriptions are redacted and `TelegramProperties.toString()` prints `***`, keeping tokens
+out of logs. `TelegramLiveTest` (tagged `live`) is the manual real-chat smoke.
 
 ---
 
