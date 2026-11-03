@@ -65,6 +65,31 @@ class DigestTextRendererTest {
   }
 
   @Test
+  void separatesEventsOfTheSameDayWithABlankLineSoTheyCanBeChunkedApart() {
+    DigestMessage message =
+        DigestMessage.build(
+            WINDOW,
+            List.of(
+                item(1L, 10L, "2026-11-03T18:30:00Z", null, false, "First", "A", "Fribourg", null),
+                item(
+                    2L, 20L, "2026-11-03T20:00:00Z", null, false, "Second", "B", "Fribourg", null)),
+            150);
+
+    assertThat(renderer.render(message))
+        .isEqualTo(
+            """
+            Fribourg & Bern · 3 Nov – 17 Nov 2026
+
+            Tue 3 Nov
+              19:30 · First
+              A, Fribourg
+
+              21:00 · Second
+              B, Fribourg\
+            """);
+  }
+
+  @Test
   void labelsEventsStartedBeforeTheWindowAsOngoing() {
     DigestMessage message =
         DigestMessage.build(

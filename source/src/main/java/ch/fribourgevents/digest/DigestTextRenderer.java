@@ -17,9 +17,12 @@ import java.util.StringJoiner;
  * Renders a {@link DigestMessage} as plain text.
  *
  * <p>Output is deterministic: no clock, no locale from the environment, and no HTML. Upstream text
- * is whitespace-collapsed so an item always occupies the same three lines, which keeps the message
- * stable for any transport. Escaping for a specific channel (for example Telegram HTML) belongs to
- * that channel's sender, not here.
+ * is whitespace-collapsed so an item always occupies the same lines, which keeps the message stable
+ * for any transport. Escaping for a specific channel (for example Telegram HTML) belongs to that
+ * channel's sender, not here.
+ *
+ * <p>Each event is its own paragraph (blank line separated) and the day header is glued to its
+ * first event, so {@link MessageChunker} can split between events without cutting one in half.
  */
 public final class DigestTextRenderer {
 
@@ -62,12 +65,12 @@ public final class DigestTextRenderer {
   }
 
   private static String dayBlock(Day day, ZoneId zone) {
-    StringJoiner joiner = new StringJoiner("\n");
-    joiner.add(DAY_HEADER.format(day.date()));
+    StringJoiner items = new StringJoiner("\n\n");
     for (Item item : day.items()) {
-      joiner.add(itemBlock(item, day.date(), zone));
+      items.add(itemBlock(item, day.date(), zone));
     }
-    return joiner.toString();
+    // The day header rides along with its first item so a chunk never starts with a bare header.
+    return DAY_HEADER.format(day.date()) + "\n" + items;
   }
 
   private static String itemBlock(Item item, LocalDate day, ZoneId zone) {

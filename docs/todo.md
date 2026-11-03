@@ -300,16 +300,16 @@ temp SQLite database (the selection reads through `EventStore`), so
 messages into transport-safe parts without breaking items.
 
 **Acceptance criteria:**
-- [ ] `NotificationSender.send(DigestMessage)` returns `DeliveryResult`
+- [x] `NotificationSender.send(DigestMessage)` returns `DeliveryResult`
       (channel, parts, external ids, status) and declares a checked failure type.
-- [ ] `MessageChunker` splits at item/day boundaries under a configurable limit
+- [x] `MessageChunker` splits at item/day boundaries under a configurable limit
       (default 4000 chars), numbers parts `(n/m)`, and never splits an item line.
-- [ ] A single over-long item is truncated with an ellipsis and still fits.
-- [ ] Unit tests cover 0/1/many parts, exact-boundary input, and a giant item.
+- [x] A single over-long item is truncated with an ellipsis and still fits.
+- [x] Unit tests cover 0/1/many parts, exact-boundary input, and a giant item.
 
 **Verification:**
-- [ ] `./gradlew test --tests 'ch.fribourgevents.notify.*'`
-- [ ] `./gradlew build`
+- [x] `./gradlew test --tests 'ch.fribourgevents.notify.*'`
+- [x] `./gradlew build`
 
 **Dependencies:** Task 8 · **Size:** S
 
@@ -318,6 +318,14 @@ messages into transport-safe parts without breaking items.
 - `BASE/notify/DeliveryResult.java`
 - `BASE/notify/MessageChunker.java`
 - `TEST/notify/MessageChunkerTest.java`
+
+**Notes (implementation, 2026-11-03):** `NotificationException` joins the SPI as the declared
+checked failure (a deliberate second exception beside `SourceFetchException`, per this task's
+acceptance criteria); failures that reached nothing throw, `DeliveryResult` covers
+`DELIVERED` and `PARTIAL`. To make chunking unambiguous the renderer now separates events
+of the same day with a blank line, so every event is a paragraph and split points are always
+event/day boundaries. The limit applies to a final part *including* its `(n/m)` suffix, and
+the chunker re-packs when the suffix grows a digit.
 
 ---
 
