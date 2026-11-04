@@ -16,6 +16,7 @@ data
 *.sqlite-*
 
 # Not needed to build the jar
+dist
 docs
 .idea
 .vscode

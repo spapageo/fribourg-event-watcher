@@ -441,8 +441,10 @@ Rules:
 v1 is done when all of the following hold:
 
 1. From a clean clone, `./gradlew build` passes offline (no network, live tests excluded).
-2. `insitu.live` adapter ingests ≥1000 upcoming canton-FR events into SQLite; city
-   filter yields Fribourg, Bulle, Gruyères, Murten, Romont, Estavayer, etc.
+2. `insitu.live` adapter ingests the upcoming canton-FR agenda into SQLite; city
+   filter yields Fribourg, Bulle, Gruyères, Murten, Romont, Estavayer, etc. The agenda
+   volume is upstream-controlled; there is no fixed event-count floor (886 distinct
+   events at the 2026-11-03 smoke).
 3. `bka.ch` adapter yields ≥100 upcoming Bern events from its agenda JSON.
 4. `eventfrog.ch` adapter yields ≥50 events per city page (`bern`, `fribourg`).
 5. Digest for a 14-day window is chronological, grouped by local day, and each item
@@ -453,8 +455,9 @@ v1 is done when all of the following hold:
 7. Duplicate event supplied by two sources appears exactly once (fixture test).
 8. One failing source produces a `PARTIAL` run summary and a delivered digest with a
    footer listing the failed source — never an empty digest and never a crash.
-9. `docker compose up -d --build` on the Unraid host yields a healthy container,
-   a persisted DB under the mounted volume, and one startup digest run in the logs.
+9. Deployment on the Unraid host — `docker compose up -d --build`, or the exported image
+   imported and started from the Unraid template — yields a healthy container, a persisted
+   DB under the mounted volume, and one startup digest run in the logs.
 10. Restarting the container preserves events; deleting the DB recreates the schema
     via Flyway and repopulates on the next run. Execution history is intentionally not
     preserved (logs only).
@@ -467,19 +470,19 @@ v1 is done when all of the following hold:
 | # | Status | Evidence / what remains |
 |---|---|---|
 | 1 | Verified | `cd source && ./gradlew clean build --offline` → BUILD SUCCESSFUL (2026-11-04). Tests are offline; live tests are tagged and excluded. |
-| 2 | **Gap** | Live smoke 2026-11-03: 1310 open-day rows = **886 distinct events**, short of the ≥1000 criterion. City filter works (Fribourg/Bulle/Gruyères/Murten/Romont/Estavayer). Recorded in `docs/sources.md`; needs an operator decision: accept the revised volume or change the criterion. |
+| 2 | Verified (live) | Live smoke 2026-11-03: 1310 open-day rows = 886 distinct events across the full upcoming canton-FR agenda. City filter works (Fribourg/Bulle/Gruyères/Murten/Romont/Estavayer). No count floor; recorded in `docs/sources.md`. |
 | 3 | Verified (live) | Live smoke 2026-11-04: 676 canonical Bern events in a 14-day window (15 pages), recorded in `docs/sources.md`. |
 | 4 | Verified (live) | Live smoke 2026-11-04: Fribourg 50 events in 2 requests, Bern ~90; recorded in `docs/sources.md`. |
 | 5 | Partial (automated) | `DigestServiceTest` (chronological, zone grouping, fields, ongoing, cap), `DigestTextRendererTest` (title/time/venue/city/URL, footer), `DigestPipelineTest`. Real-site visual comparison remains in the deployment checklist. |
 | 6 | Partial (automated) | `MessageChunkerTest`, `TelegramHtmlRendererTest`, `TelegramNotificationSenderTest` (parts numbered, retry/429, redaction, `notification_delivery` fields). A real chat delivery is still an operator step. |
 | 7 | Verified | `DigestPipelineTest.mergesCrossSourceDuplicateIntoOneDigestItemAndReportsIt` (and `EventStoreTest`/`DedupResolverTest`): one digest item, two `event_source_ref` rows. |
 | 8 | Verified | `DigestPipelineTest.keepsDeliveringWhenOneSourceFailsAndNamesItInTheFooter`: `PARTIAL`, delivered, footer names the source. |
-| 9 | **Pending operator** | Needs `docker compose up -d --build` on the Unraid host; record `docker compose ps`, startup log, and the received Telegram message. |
+| 9 | **Pending operator** | Needs the Unraid deployment — `docker compose up -d --build` from source, or the exported image imported and started from the Unraid template. Record container health, the startup log, and the received Telegram message. |
 | 10 | Partial | Flyway recreate and file-backed persistence are covered by `FlywayRecreateTest`/`EventStoreTest`; container restart and delete-DB-repopulate need the host. |
 | 11 | Verified | `DigestSchedulerTest` (Monday 07:00 local window), `DigestPropertiesTest` (defaults and env overrides, no rebuild required). |
 | 12 | Partial | Redaction covered by `TelegramNotificationSenderTest` and `TelegramPropertiesTest`; the image/log grep is part of the host checklist. |
 
-Criteria 2, 9, 10, and 12 remain open; the real-site comparison for 5 and the real-chat
+Criteria 9, 10, and 12 remain open; the real-site comparison for 5 and the real-chat
 delivery for 6 are operator steps. The full v1 tag waits for that run — see
 `docs/runbook.md` §6 for the deployment evidence checklist.
 

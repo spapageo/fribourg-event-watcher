@@ -20,7 +20,7 @@ endpoint; the schedule and the startup flag are the only ways to run it.
 Prerequisites:
 
 - Java 25 (the Gradle toolchain resolves it; a full JDK is required, not just a JRE)
-- Docker with the Compose plugin (deployment only)
+- Docker (plus the Compose plugin if you deploy by building from source)
 - Network access for a real run; the default test suite is fully offline
 
 ### 1. Build and test from a clone
@@ -64,6 +64,20 @@ The container persists the database in `./data` and runs Java as `PUID:PGID`
 (default `1000:1000`). Set `digest.run-on-startup=true` (or `DIGEST_RUN_ON_STARTUP=true`)
 for the first deployment so a run happens immediately instead of waiting for Monday.
 See [`runbook.md`](runbook.md) for the Unraid-specific steps.
+
+### 4. Offline Unraid deployment (no build on the host)
+
+Build the image on a development machine, export it as an archive, and import it on the
+Unraid host:
+
+```bash
+./docker/export-image.sh 1.0.0       # -> dist/ archive + checksum + matching Unraid template
+```
+
+Copy the archive and generated template to the host, `docker load -i` the archive, then
+install the template as a user template and create the container from the Unraid Docker UI. The template already carries the port, `/data` volume, health
+web UI, `--shm-size=1g`, and the common environment variables; fill in the Telegram
+credentials and apply. Full steps: [`runbook.md`](runbook.md) §2.3.
 
 ---
 
@@ -143,6 +157,7 @@ Run from `source/` unless stated otherwise.
 | `./gradlew bootRun --args='--digest.dry-run=true --digest.run-on-startup=true'` | Local dry run |
 | `./gradlew jacocoTestReport` | HTML coverage under `build/reports/jacoco/test/html` |
 | `docker compose up -d --build` | Build and start the service (repo root) |
+| `./docker/export-image.sh 1.0.0` | Build and export an image archive for offline Unraid import (`dist/`) |
 | `docker compose logs -f digest` | Follow run logs |
 | `docker compose restart digest` | Restart with the same environment (startup run fires if enabled) |
 | `docker compose up -d` | Apply `.env` changes; recreates the container when the environment differs |
@@ -177,7 +192,8 @@ success criteria in [`SPEC.md`](SPEC.md) §8. Record the numbers in
 1. `source/`: `./gradlew spotlessApply build` is green.
 2. `.env` has `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`, and `DIGEST_RUN_ON_STARTUP=true`.
 3. `mkdir -p data` (owned by `PUID:PGID`, or let the entrypoint fix it).
-4. `docker compose up -d --build`; `docker compose ps` shows `healthy`.
+4. `docker compose up -d --build` (or apply the Unraid template after importing the
+   exported image); the container shows `healthy`.
 5. Logs show `startup_run_started` and `digest_run_finished ... status=SUCCESS` (or
    `PARTIAL` naming the failed source).
 6. Telegram received one or more messages, each part numbered `(n/m)`.
@@ -197,7 +213,10 @@ docs/                      all Markdown (spec, plan, tasks, operator docs)
   runbook.md               Unraid deployment and operations
   sources.md               per-source selectors, limits, quirks
 docker/                    Dockerfile, entrypoint, healthcheck
+  export-image.sh          build + docker save to dist/ for offline deployment
+  unraid/                  Unraid Docker UI application template
 docker-compose.yml         single-service deployment
+dist/                      exported image archives (gitignored)
 data/                      SQLite volume (gitignored)
 source/                    Gradle root
   src/main/java/ch/fribourgevents/

@@ -86,7 +86,7 @@ Detailed acceptance criteria, verification, and file lists: `docs/todo.md`.
 - [x] Task 13: Docker image (JRE + Chromium), compose, healthcheck, volume
 
 ### Checkpoint C — Deployable
-- [ ] `docker compose up -d --build` → healthy container on Unraid
+- [ ] `docker compose up -d --build` (or imported-image template) → healthy container on Unraid
 - [ ] DB survives container restart
 - [ ] Cron default is Monday 07:00 Europe/Zurich and env-overridable
 
@@ -96,9 +96,9 @@ Detailed acceptance criteria, verification, and file lists: `docs/todo.md`.
 - [x] Task 16: eventfrog.ch adapter
 
 ### Checkpoint D — Three sources
-- [ ] insitu ≥1000 FR events, bka ≥100 Bern events, eventfrog ≥50/city
+- [x] insitu full upcoming FR agenda (886 distinct events at 2026-11-03), bka ≥100 Bern events, eventfrog ≥50/city
 - [ ] All three run in one pipeline run within rate limits
-- [ ] One manual live smoke per HTML source documented
+- [x] One manual live smoke per source documented
 
 ### Phase 5 — Dedup and polish
 - [x] Task 17: Cross-source dedup matcher

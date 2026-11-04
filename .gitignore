@@ -14,6 +14,9 @@ build/
 # OS
 .DS_Store
 
+# Exported images for offline deployment
+dist/
+
 # Runtime data and secrets
 .env
 data/*

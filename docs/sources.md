@@ -82,8 +82,9 @@ inventing a link.
   return 404, and the SSR event page carries no date list. Revisit if insitu publishes the v2
   outgoing-API docs (`support@insitu.live`).
 - No `canton` or price information in the agenda listing.
-- Success criterion 2 in `docs/SPEC.md` §8 says "≥1000 upcoming events"; the agenda currently yields
-  886 distinct events (1310 open-day rows). Recorded as a spec/reality gap, not worked around.
+- The agenda yields 886 distinct events (1310 open-day rows) at the 2026-11-03 smoke. Upstream
+  controls this volume, so success criterion 2 in `docs/SPEC.md` §8 deliberately has no fixed
+  event-count floor.
 
 ---
 

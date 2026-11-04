@@ -1,0 +1,191 @@
+<?xml version="1.0"?>
+<Container version="2">
+  <Name>fribourg-events-digest</Name>
+  <Repository>fribourg-events-digest:1.0.0</Repository>
+  <Registry/>
+  <Network>bridge</Network>
+  <MyIP/>
+  <Shell>sh</Shell>
+  <Privileged>false</Privileged>
+  <Support/>
+  <Project/>
+  <Overview>Weekly Fribourg &amp; Bern event digest. Fetches events from insitu.live, bka.ch and eventfrog.ch, deduplicates them, and sends a chronological 14-day digest to Telegram every Monday at 07:00 Europe/Zurich. The only HTTP surface is Actuator health/info.</Overview>
+  <Category>Tools:Utilities</Category>
+  <WebUI>http://[IP]:[PORT:8080]/actuator/health</WebUI>
+  <TemplateURL/>
+  <Icon/>
+  <ExtraParams>--restart=unless-stopped --shm-size=1g</ExtraParams>
+  <PostArgs/>
+  <CPUset/>
+  <DateInstalled>1793750400</DateInstalled>
+  <DonateText/>
+  <DonateLink/>
+  <Requires/>
+  <Description>Fetches events from insitu.live, bka.ch and eventfrog.ch, deduplicates them, and sends a chronological 14-day digest to Telegram every Monday at 07:00 Europe/Zurich.</Description>
+  <Networking>
+    <Mode>bridge</Mode>
+    <Publish>
+      <Port>
+        <HostPort>8080</HostPort>
+        <ContainerPort>8080</ContainerPort>
+        <Protocol>tcp</Protocol>
+      </Port>
+    </Publish>
+  </Networking>
+  <Data>
+    <Volume>
+      <HostDir>/mnt/user/appdata/fribourg-digest/data</HostDir>
+      <ContainerDir>/data</ContainerDir>
+      <Mode>rw</Mode>
+    </Volume>
+  </Data>
+  <Environment>
+    <Variable>
+      <Value>99</Value>
+      <Name>PUID</Name>
+      <Mode/>
+    </Variable>
+    <Variable>
+      <Value>100</Value>
+      <Name>PGID</Name>
+      <Mode/>
+    </Variable>
+    <Variable>
+      <Value>Europe/Zurich</Value>
+      <Name>TZ</Name>
+      <Mode/>
+    </Variable>
+    <Variable>
+      <Value>/data/digest.db</Value>
+      <Name>DB_PATH</Name>
+      <Mode/>
+    </Variable>
+    <Variable>
+      <Value></Value>
+      <Name>TELEGRAM_BOT_TOKEN</Name>
+      <Mode/>
+    </Variable>
+    <Variable>
+      <Value></Value>
+      <Name>TELEGRAM_CHAT_ID</Name>
+      <Mode/>
+    </Variable>
+    <Variable>
+      <Value>0 0 7 * * MON</Value>
+      <Name>DIGEST_CRON</Name>
+      <Mode/>
+    </Variable>
+    <Variable>
+      <Value>Europe/Zurich</Value>
+      <Name>DIGEST_ZONE</Name>
+      <Mode/>
+    </Variable>
+    <Variable>
+      <Value>14</Value>
+      <Name>DIGEST_WINDOW_DAYS</Name>
+      <Mode/>
+    </Variable>
+    <Variable>
+      <Value>true</Value>
+      <Name>DIGEST_RUN_ON_STARTUP</Name>
+      <Mode/>
+    </Variable>
+    <Variable>
+      <Value>false</Value>
+      <Name>DIGEST_DRY_RUN</Name>
+      <Mode/>
+    </Variable>
+    <Variable>
+      <Value>false</Value>
+      <Name>DIGEST_SEND_FAILURE_NOTICE</Name>
+      <Mode/>
+    </Variable>
+    <Variable>
+      <Value>true</Value>
+      <Name>DIGEST_SHOW_MERGED_COUNT</Name>
+      <Mode/>
+    </Variable>
+    <Variable>
+      <Value>4000</Value>
+      <Name>TELEGRAM_PART_LIMIT</Name>
+      <Mode/>
+    </Variable>
+    <Variable>
+      <Value>1</Value>
+      <Name>DIGEST_RATE_LIMIT_PER_SECOND</Name>
+      <Mode/>
+    </Variable>
+    <Variable>
+      <Value>60</Value>
+      <Name>DIGEST_MAX_REQUESTS_PER_RUN</Name>
+      <Mode/>
+    </Variable>
+    <Variable>
+      <Value>10s</Value>
+      <Name>DIGEST_HTTP_TIMEOUT</Name>
+      <Mode/>
+    </Variable>
+    <Variable>
+      <Value>true</Value>
+      <Name>DIGEST_BROWSER_HEADLESS</Name>
+      <Mode/>
+    </Variable>
+    <Variable>
+      <Value>true</Value>
+      <Name>SOURCE_INSITU_ENABLED</Name>
+      <Mode/>
+    </Variable>
+    <Variable>
+      <Value>true</Value>
+      <Name>SOURCE_BKA_ENABLED</Name>
+      <Mode/>
+    </Variable>
+    <Variable>
+      <Value>true</Value>
+      <Name>SOURCE_EVENTFROG_ENABLED</Name>
+      <Mode/>
+    </Variable>
+    <Variable>
+      <Value>0.90</Value>
+      <Name>DEDUP_TITLE_THRESHOLD</Name>
+      <Mode/>
+    </Variable>
+    <Variable>
+      <Value>0.85</Value>
+      <Name>DEDUP_VENUE_THRESHOLD</Name>
+      <Mode/>
+    </Variable>
+    <Variable>
+      <Value>1</Value>
+      <Name>DEDUP_DATE_WINDOW_DAYS</Name>
+      <Mode/>
+    </Variable>
+  </Environment>
+  <Labels/>
+  <Config Name="WebUI" Target="8080" Default="8080" Mode="tcp" Description="Actuator health/info. Change the host port if 8080 is taken." Type="Port" Display="always" Required="true" Mask="false">8080</Config>
+  <Config Name="Data" Target="/data" Default="/mnt/user/appdata/fribourg-digest/data" Mode="rw" Description="SQLite database directory (create it if it does not exist)." Type="Path" Display="always" Required="true" Mask="false">/mnt/user/appdata/fribourg-digest/data</Config>
+  <Config Name="PUID" Target="PUID" Default="99" Mode="" Description="UID that owns the data folder. Unraid default is 99 (nobody); match your share owner." Type="Variable" Display="advanced" Required="false" Mask="false">99</Config>
+  <Config Name="PGID" Target="PGID" Default="100" Mode="" Description="GID that owns the data folder. Unraid default is 100 (users); match your share owner." Type="Variable" Display="advanced" Required="false" Mask="false">100</Config>
+  <Config Name="Timezone" Target="TZ" Default="Europe/Zurich" Mode="" Description="Container timezone; keep in sync with DIGEST_ZONE." Type="Variable" Display="advanced" Required="false" Mask="false">Europe/Zurich</Config>
+  <Config Name="Database path" Target="DB_PATH" Default="/data/digest.db" Mode="" Description="SQLite file inside the mounted /data volume. Do not point it outside /data." Type="Variable" Display="advanced" Required="false" Mask="false">/data/digest.db</Config>
+  <Config Name="Telegram bot token" Target="TELEGRAM_BOT_TOKEN" Default="" Mode="" Description="Bot API token from @BotFather. Required unless DIGEST_DRY_RUN=true." Type="Variable" Display="always" Required="false" Mask="true"></Config>
+  <Config Name="Telegram chat id" Target="TELEGRAM_CHAT_ID" Default="" Mode="" Description="Target chat id (a private chat by default). Required unless DIGEST_DRY_RUN=true." Type="Variable" Display="always" Required="false" Mask="false"></Config>
+  <Config Name="Cron" Target="DIGEST_CRON" Default="0 0 7 * * MON" Mode="" Description="Spring cron expression. Default: Mondays 07:00 in DIGEST_ZONE." Type="Variable" Display="always" Required="false" Mask="false">0 0 7 * * MON</Config>
+  <Config Name="Digest zone" Target="DIGEST_ZONE" Default="Europe/Zurich" Mode="" Description="Zone for the window, day grouping and cron." Type="Variable" Display="always" Required="false" Mask="false">Europe/Zurich</Config>
+  <Config Name="Window days" Target="DIGEST_WINDOW_DAYS" Default="14" Mode="" Description="Fetch/selection window in local days." Type="Variable" Display="advanced" Required="false" Mask="false">14</Config>
+  <Config Name="Run on startup" Target="DIGEST_RUN_ON_STARTUP" Default="true" Mode="" Description="Run once when the container starts. Leave true for the first deploy, then switch to false." Type="Variable" Display="always" Required="false" Mask="false">true</Config>
+  <Config Name="Dry run" Target="DIGEST_DRY_RUN" Default="false" Mode="" Description="Render and log the digest without sending to Telegram." Type="Variable" Display="advanced" Required="false" Mask="false">false</Config>
+  <Config Name="Send failure notice" Target="DIGEST_SEND_FAILURE_NOTICE" Default="false" Mode="" Description="Send a short notice when every source fails instead of staying silent." Type="Variable" Display="advanced" Required="false" Mask="false">false</Config>
+  <Config Name="Show merged count" Target="DIGEST_SHOW_MERGED_COUNT" Default="true" Mode="" Description="Append the cross-source dedup count to the digest footer." Type="Variable" Display="advanced" Required="false" Mask="false">true</Config>
+  <Config Name="Telegram part limit" Target="TELEGRAM_PART_LIMIT" Default="4000" Mode="" Description="Maximum characters per Telegram message part (Telegram hard limit is 4096)." Type="Variable" Display="advanced" Required="false" Mask="false">4000</Config>
+  <Config Name="Rate limit per second" Target="DIGEST_RATE_LIMIT_PER_SECOND" Default="1" Mode="" Description="Per-host request rate for scraped sources. Keep at 1 unless the spec changes." Type="Variable" Display="advanced" Required="false" Mask="false">1</Config>
+  <Config Name="Max requests per run" Target="DIGEST_MAX_REQUESTS_PER_RUN" Default="60" Mode="" Description="Per-source request budget. Keep at 60 unless the spec changes." Type="Variable" Display="advanced" Required="false" Mask="false">60</Config>
+  <Config Name="HTTP timeout" Target="DIGEST_HTTP_TIMEOUT" Default="10s" Mode="" Description="Outbound API and Telegram timeout." Type="Variable" Display="advanced" Required="false" Mask="false">10s</Config>
+  <Config Name="Headless browser" Target="DIGEST_BROWSER_HEADLESS" Default="true" Mode="" Description="Run Chromium headless. Only change for debugging on a machine with a display." Type="Variable" Display="advanced" Required="false" Mask="false">true</Config>
+  <Config Name="insitu enabled" Target="SOURCE_INSITU_ENABLED" Default="true" Mode="" Description="Read insitu.live (canton Fribourg)." Type="Variable" Display="advanced" Required="false" Mask="false">true</Config>
+  <Config Name="bka enabled" Target="SOURCE_BKA_ENABLED" Default="true" Mode="" Description="Read bka.ch (canton Bern)." Type="Variable" Display="advanced" Required="false" Mask="false">true</Config>
+  <Config Name="eventfrog enabled" Target="SOURCE_EVENTFROG_ENABLED" Default="true" Mode="" Description="Read eventfrog.ch city pages (Fribourg and Bern)." Type="Variable" Display="advanced" Required="false" Mask="false">true</Config>
+  <Config Name="Dedup title threshold" Target="DEDUP_TITLE_THRESHOLD" Default="0.90" Mode="" Description="Jaro-Winkler title score required for a fuzzy merge." Type="Variable" Display="advanced" Required="false" Mask="false">0.90</Config>
+  <Config Name="Dedup venue threshold" Target="DEDUP_VENUE_THRESHOLD" Default="0.85" Mode="" Description="Jaro-Winkler venue score required when both sides have a venue." Type="Variable" Display="advanced" Required="false" Mask="false">0.85</Config>
+  <Config Name="Dedup date window" Target="DEDUP_DATE_WINDOW_DAYS" Default="1" Mode="" Description="Maximum day difference between the first occurrences of two candidates." Type="Variable" Display="advanced" Required="false" Mask="false">1</Config>
+</Container>
