@@ -21,7 +21,8 @@ import org.springframework.web.client.RestClient;
  * Manual live smoke against the real bka.ch agenda API. Tagged {@code live}, so it is excluded from
  * {@code ./gradlew build}.
  *
- * <p>Run with: {@code ./gradlew test -PincludeTags=live -PliveSource=bka}
+ * <p>Run with: {@code ./gradlew test -PincludeTags=live --tests
+ * 'ch.fribourgevents.source.bka.BkaLiveTest'}
  */
 @Tag("live")
 class BkaLiveTest {

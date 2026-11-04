@@ -25,7 +25,8 @@ import org.springframework.web.client.RestClient;
  * {@code ./gradlew build}; it sends one message to the configured chat.
  *
  * <p>Run with: {@code TELEGRAM_BOT_TOKEN=... TELEGRAM_CHAT_ID=... ./gradlew test -PincludeTags=live
- * -PliveSource=telegram}. Credentials are read from the environment only and are never logged.
+ * --tests 'ch.fribourgevents.notify.telegram.TelegramLiveTest'}. Credentials are read from the
+ * environment only and are never logged.
  */
 @Tag("live")
 class TelegramLiveTest {

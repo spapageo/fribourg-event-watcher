@@ -102,7 +102,7 @@ Detailed acceptance criteria, verification, and file lists: `docs/todo.md`.
 
 ### Phase 5 — Dedup and polish
 - [x] Task 17: Cross-source dedup matcher
-- [ ] Task 18: Pipeline dedup integration and run report footer
+- [x] Task 18: Pipeline dedup integration and run report footer
 - [ ] Task 19: Documentation and final v1 verification
 
 ### Checkpoint E — v1 complete

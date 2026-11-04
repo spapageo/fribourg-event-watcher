@@ -23,7 +23,8 @@ import org.slf4j.LoggerFactory;
  * Manual live smoke against the real eventfrog.ch city pages. Tagged {@code live}, so {@code
  * ./gradlew build} never launches a browser or touches the network.
  *
- * <p>Run with: {@code ./gradlew test -PincludeTags=live -PliveSource=eventfrog}
+ * <p>Run with: {@code ./gradlew test -PincludeTags=live --tests
+ * 'ch.fribourgevents.source.eventfrog.EventfrogLiveTest'}
  *
  * <p>A one-year window keeps every currently listed event inside the window, so each city must
  * yield the spec's ≥50 events. Detail enrichment is off here: the smoke is about the

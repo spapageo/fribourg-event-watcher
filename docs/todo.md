@@ -784,15 +784,15 @@ inserted/merged counts, aggregated on `PipelineResult` and logged on both `sourc
 against a real container run.
 
 **Acceptance criteria:**
-- [ ] `docs/README.md`: quickstart, env vars, commands, first run.
-- [ ] `docs/runbook.md`: Unraid deployment, UID/GID, volume/backup, logs, manual
+- [x] `docs/README.md`: quickstart, env vars, commands, first run.
+- [x] `docs/runbook.md`: Unraid deployment, UID/GID, volume/backup, logs, manual
       re-run, troubleshooting (SQLite lock, Chromium crash, Telegram 429).
-- [ ] `docs/sources.md`: selectors, pagination, rate limits, quirks per source.
-- [ ] `docs/architecture.md`: module graph, data model, key decisions.
+- [x] `docs/sources.md`: selectors, pagination, rate limits, quirks per source.
+- [x] `docs/architecture.md`: module graph, data model, key decisions.
 - [ ] All twelve success criteria in `docs/SPEC.md` §8 checked off with evidence.
 
 **Verification:**
-- [ ] `./gradlew clean build` from a fresh clone (offline for tests)
+- [x] `./gradlew clean build` from a fresh clone (offline for tests)
 - [ ] `docker compose up -d --build` on Unraid; digest received in Telegram
 - [ ] Manual comparison of digest items against all three source websites
 
@@ -804,10 +804,27 @@ against a real container run.
 - `docs/sources.md`
 - `docs/architecture.md`
 
+**Notes (implementation, 2026-11-04):** wrote `docs/README.md` (quickstart, full env
+reference, commands, live checks, first-run checklist), `docs/runbook.md` (Unraid +
+Compose plugin, PUID/PGID, manual re-run, backup/restore/reset, log greps, troubleshooting,
+evidence checklist), and `docs/architecture.md` (module graph, run flow, schema, dedup,
+observability, decisions). `docs/sources.md` was already current from Tasks 15–16. Added
+`ModuleBoundaryTest` (ArchUnit) so the documented layer graph is enforced, and corrected the
+live-test Javadocs: `-PliveSource` was never wired into `build.gradle`, so the commands now
+use `-PincludeTags=live --tests '<class>'`. `./gradlew clean build --offline` passes (criterion
+1). Criteria 3–8 and 11 are evidenced by live smokes and tests; see the evidence table in
+`docs/SPEC.md` §8. **Still open and blocked on the operator's Unraid host:** criterion 2
+(insitu live smoke finds 886 distinct events, below the ≥1000 criterion — needs a decision to
+accept the revised volume or change the spec), the container restart/delete-DB checks
+(criterion 9/10), the real Telegram delivery (criterion 6's manual half), and the image/log
+secret grep (criterion 12). The v1.0.0 tag stays untagged until those are recorded.
+
 ---
 
 ## Checkpoint E — v1 complete
 
-- [ ] All success criteria verified and recorded
-- [ ] `docs/` complete and accurate
+- [ ] All success criteria verified and recorded (criteria 2, 9, 10, 12 still need the
+      operator run; see `docs/SPEC.md` §8 evidence table)
+- [x] `docs/` complete and accurate (`README.md`, `runbook.md`, `architecture.md`,
+      `sources.md`, module specs, this task list)
 - [ ] Tag `v1.0.0` after human review

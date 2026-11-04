@@ -14,7 +14,8 @@ import org.slf4j.LoggerFactory;
  * Manual live smoke for the Selenium layer: loads the real bka.ch agenda through headless Chromium.
  * Tagged {@code live}, so {@code ./gradlew build} never launches a browser.
  *
- * <p>Run with: {@code ./gradlew test -PincludeTags=live -PliveSource=browser}
+ * <p>Run with: {@code ./gradlew test -PincludeTags=live --tests
+ * 'ch.fribourgevents.source.browser.BrowserLiveTest'}
  */
 @Tag("live")
 class BrowserLiveTest {

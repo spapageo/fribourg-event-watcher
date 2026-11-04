@@ -20,7 +20,8 @@ import org.springframework.web.client.RestClient;
  * Manual live smoke against the real insitu.live API. Tagged {@code live}, so it is excluded from
  * {@code ./gradlew build}.
  *
- * <p>Run with: {@code ./gradlew test -PincludeTags=live -PliveSource=insitu}
+ * <p>Run with: {@code ./gradlew test -PincludeTags=live --tests
+ * 'ch.fribourgevents.source.insitu.InsituLiveTest'}
  */
 @Tag("live")
 class InsituLiveTest {
