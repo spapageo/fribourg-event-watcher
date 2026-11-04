@@ -15,6 +15,7 @@ import ch.fribourgevents.source.bka.BkaEventSource;
 import ch.fribourgevents.source.browser.BrowserProperties;
 import ch.fribourgevents.source.browser.RateLimiter;
 import ch.fribourgevents.source.browser.SeleniumPageLoader;
+import ch.fribourgevents.source.eventfrog.EventfrogEventSource;
 import ch.fribourgevents.source.insitu.InsituClient;
 import ch.fribourgevents.source.insitu.InsituEventSource;
 import ch.fribourgevents.store.EventStore;
@@ -78,6 +79,12 @@ public class RuntimeConfiguration {
   @Bean
   EventSource bkaEventSource(RestClient restClient, RateLimiter rateLimiter) {
     return new BkaEventSource(new BkaClient(BKA_BASE_URL, restClient, rateLimiter));
+  }
+
+  /** eventfrog.ch is HTML-only; it reads both city pages through the shared Selenium loader. */
+  @Bean
+  EventSource eventfrogEventSource(PageLoader pageLoader) {
+    return new EventfrogEventSource(pageLoader);
   }
 
   /** One limiter for the whole run, so every browser source shares the per-host 1 req/s rule. */

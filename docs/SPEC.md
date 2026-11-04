@@ -230,7 +230,7 @@ source/                      → Gradle project root; ALL source code
       EventSource.java       → adapter SPI
       insitu/                → API client, response mapping
       bka/                   → agenda JSON client + mapper
-      eventfrog/             → page walker + parser (embedded top-localities JSON + SSR list)
+      eventfrog/             → page walker + parser (SSR list fragments + JSON-LD detail)
       browser/               → Selenium driver factory, rate limiter, page loader
     digest/                  → window selection, grouping, DigestMessage, text renderer
     notify/                  → NotificationSender SPI, chunker, DeliveryResult
@@ -476,8 +476,9 @@ v1 is done when all of the following hold:
    accepted; no robots.txt is published (404). The rendered HTML is not scraped because
    it lacks times/descriptions/addresses and per-event detail requests would exceed the
    request budget.
-5. **eventfrog.ch** — using the embedded `top-localities` JSON and/or SSR HTML is
-   accepted; robots.txt allows `/de/events`.
+5. **eventfrog.ch** — the city pages are SSR HTML; the embedded `top-localities` JSON is
+   city navigation, not event data. The adapter reads the SSR tiles and a bounded number of
+   schema.org JSON-LD detail pages. `robots.txt` allows `/de/events`.
 6. **Scraper identity** — no contact email in the `User-Agent`.
 
 ### Non-blocking defaults (change later)

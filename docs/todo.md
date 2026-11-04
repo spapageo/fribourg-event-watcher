@@ -639,18 +639,18 @@ record the JSON endpoint, mapping, budget, and gaps.
 where available and SSR HTML otherwise.
 
 **Acceptance criteria:**
-- [ ] Fetches `/de/events/fribourg` and `/de/events/bern`, following pagination/load-more.
-- [ ] Extracts ≥50 events per city; parses embedded `top-localities` JSON when present,
+- [x] Fetches `/de/events/fribourg` and `/de/events/bern`, following pagination/load-more.
+- [x] Extracts ≥50 events per city; parses embedded `top-localities` JSON when present,
       falls back to SSR list/detail parsing.
-- [ ] Maps title, start/end, venue, city, URL, categories, price; dedupes repeated links
+- [x] Maps title, start/end, venue, city, URL, categories, price; dedupes repeated links
       within a page.
-- [ ] Fixtures: one list page per city + one detail page + malformed item.
-- [ ] Parser is a pure function over page source.
+- [x] Fixtures: one list page per city + one detail page + malformed item.
+- [x] Parser is a pure function over page source.
 
 **Verification:**
-- [ ] `./gradlew test --tests 'ch.fribourgevents.source.eventfrog.*'`
-- [ ] `./gradlew test -PincludeTags=live -PliveSource=eventfrog` (manual, logs count)
-- [ ] `./gradlew build`
+- [x] `./gradlew test --tests 'ch.fribourgevents.source.eventfrog.*'`
+- [x] `./gradlew test -PincludeTags=live -PliveSource=eventfrog` (manual, logs count)
+- [x] `./gradlew build`
 
 **Dependencies:** Task 14 · **Size:** M
 
@@ -659,6 +659,23 @@ where available and SSR HTML otherwise.
 - `BASE/source/eventfrog/EventfrogParser.java`
 - `TEST/source/eventfrog/EventfrogEventSourceTest.java`
 - `TEST/resources/fixtures/eventfrog/*.html`
+
+**Notes (implementation, 2026-11-04):** the research assumption that the page embeds event data
+in `top-localities` is wrong: that script is the city navigation dropdown. The adapter therefore
+reads the SSR `a.event-list__events__tile` markup, follows the "Mehr Events anzeigen" fragments at
+`/de/event-list/<city>.html?shop_recpage=N&perPage=48`, and parses `top-localities` for diagnostics
+only. Detail pages carry a schema.org `Event` JSON-LD block (exact instants, address/coordinates,
+description, categories, offers); group pages carry every showing in `subEvent[]`, so one request
+richly maps a whole run. Because a city page can hold hundreds of events and the source budget is
+60 requests, detail enrichment is bounded to the earliest in-window candidates (30 by default)
+and the rest keep their list-derived occurrence; a failed detail page falls back to the tile
+instead of failing the source. Tile labels omit the year, so dates resolve against the window start
+as the next upcoming occurrence; `bis <month>` spans and `Hat bereits begonnen` are handled.
+Live smoke: Fribourg 50 events in 2 requests, Bern ~90 events in 2 requests (one-year window,
+detail budget 0); a normal 14-day run spends up to 30 detail requests on the nearest events.
+`RuntimeConfiguration` adds the `eventfrogEventSource` bean over the shared Selenium `PageLoader`.
+Fixtures are trimmed real list fragments plus real JSON-LD detail blocks, including a malformed
+tile and a malformed detail block. Full endpoint/selector/limit notes are in `docs/sources.md`.
 
 ---
 
