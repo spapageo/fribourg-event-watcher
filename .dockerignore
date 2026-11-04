@@ -1,0 +1,26 @@
+# Build context is the repository root; keep it to the Gradle project only.
+# Everything here never reaches a layer, which is also how the image stays free
+# of secrets, runtime data, and build caches.
+.git
+.gitignore
+.gradle
+**/.gradle
+**/build
+
+# Secrets and runtime state
+.env
+data
+*.db
+*.db-*
+*.sqlite
+*.sqlite-*
+
+# Not needed to build the jar
+docs
+.idea
+.vscode
+.pi
+.claude
+*.md
+*.log
+docker-compose.yml

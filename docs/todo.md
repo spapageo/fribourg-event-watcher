@@ -475,12 +475,12 @@ for `/actuator/env`.
 available for Selenium and SQLite persisted on a bind mount.
 
 **Acceptance criteria:**
-- [ ] Multi-stage Dockerfile builds with the committed wrapper (Java 25 + Gradle), then
+- [x] Multi-stage Dockerfile builds with the committed wrapper (Java 25 + Gradle), then
       runs on `eclipse-temurin:25-jre` with Chromium + chromedriver.
-- [ ] Container runs non-root with configurable UID/GID; `--shm-size` documented.
-- [ ] Compose maps `./data:/data`, loads `.env`, sets `DB_PATH=/data/digest.db`,
+- [x] Container runs non-root with configurable UID/GID; `--shm-size` documented.
+- [x] Compose maps `./data:/data`, loads `.env`, sets `DB_PATH=/data/digest.db`,
       healthcheck hits `/actuator/health`, restart policy `unless-stopped`.
-- [ ] Image contains no build cache, no `.env`, no token.
+- [x] Image contains no build cache, no `.env`, no token.
 - [ ] Container starts healthy within 60 s; DB survives `docker compose restart`.
 
 **Verification:**
@@ -496,6 +496,23 @@ available for Selenium and SQLite persisted on a bind mount.
 - `docker-compose.yml`
 - `.dockerignore`
 - `docker/healthcheck.sh`
+
+**Notes (implementation, 2026-11-03 — verification blocked):** the Docker daemon is not
+reachable in this environment (`permission denied` on `/var/run/docker.sock`, no compose
+plugin), so every `docker build/compose/restart` step above still has to be run by the
+operator; the JVM build is green and the compose YAML parses. Layout added:
+`docker/entrypoint.sh` (creates PUID:PGID, chowns `/data`, `gosu`-drops root, execs Java)
+in addition to the four listed files. The runtime stage is `debian:bookworm-slim` with the
+official `eclipse-temurin:25-jre` tree copied in: Temurin publishes no Debian variant, and
+Ubuntu Noble's `chromium` is a snap stub, so this is the only way to get real Debian
+`chromium` + `chromium-driver` with a Java 25 JRE (the build stage still uses
+`eclipse-temurin:25-jdk` and the committed wrapper). Build context is filtered by
+`.dockerignore` (no `.env`, `data/`, `**/build`, `**/.gradle`), the final stage only receives
+the boot jar and the two scripts, and the build stage's caches stay in the discarded layer.
+Compose sets `shm_size: 1gb` (Chromium needs it; documented in the file header), exposes
+`${DIGEST_HTTP_PORT:-8080}`, and the healthcheck script polls `/actuator/health` with
+`start_period: 20s` so a slow first crawl cannot trip it while Tomcat is already serving.
+`PUID`/`PGID`/`DIGEST_HTTP_PORT` are in `.env.example` and `docs/SPEC.md` §3.
 
 ---
 

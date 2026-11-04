@@ -83,7 +83,7 @@ Detailed acceptance criteria, verification, and file lists: `docs/todo.md`.
 
 ### Phase 3 — Runtime and deployment (`runtime`)
 - [x] Task 12: Scheduler, startup runner, config properties, Actuator
-- [ ] Task 13: Docker image (JRE + Chromium), compose, healthcheck, volume
+- [x] Task 13: Docker image (JRE + Chromium), compose, healthcheck, volume
 
 ### Checkpoint C — Deployable
 - [ ] `docker compose up -d --build` → healthy container on Unraid
