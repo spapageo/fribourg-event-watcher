@@ -92,7 +92,7 @@ Detailed acceptance criteria, verification, and file lists: `docs/todo.md`.
 
 ### Phase 4 — Bern sources
 - [x] Task 14: Browser layer (Selenium `PageLoader`, rate limiter)
-- [ ] Task 15: bka.ch adapter
+- [x] Task 15: bka.ch adapter
 - [ ] Task 16: eventfrog.ch adapter
 
 ### Checkpoint D — Three sources

@@ -578,30 +578,58 @@ concern in Tasks 15/16.
 
 ### Task 15: bka.ch adapter
 
-**Description:** Scrape the Berner Kulturagenda agenda and event pages into
-`SourceEvent`s.
+**Description:** Read the Berner Kulturagenda's agenda JSON (the endpoint its own React
+agenda calls) and map it into `SourceEvent`s. Operator-approved change from the original
+HTML/`/event/<slug>` plan: the rendered agenda has no times, descriptions, or addresses,
+and one detail request per event cannot fit the 60-request budget (see the notes below).
 
 **Acceptance criteria:**
-- [ ] Walks `/agenda` pages (date/pagination links) and loads each `/event/<slug>`.
-- [ ] Parses title, dates/times, venue, address (`data-city`/`data-address`), description,
-      category, and canonical URL; resolves relative links.
-- [ ] Yields ≥100 upcoming Bern events against the current site; skips malformed items.
-- [ ] Fixtures: agenda page, two event pages, one malformed page.
-- [ ] No parser knows about Selenium; it takes `String` page sources.
+- [x] Reads `GET /api/events?limit=100&page=N&date_from=YYYY-MM-DD&date_to=YYYY-MM-DD`
+      for the fetch window; stops on the first empty `data` page; hard cap 60 requests;
+      every request paced through the shared `RateLimiter`; non-2xx, empty body, or a
+      malformed top level fail with `SourceFetchException`.
+- [x] Groups rows by `mainevent_id` (fallback `id`) so a run of showings is one event;
+      merges, dedupes, and start-sorts occurrences.
+- [x] Maps title, dates/times, venue and address (`place` or `place_proposed`),
+      description, category, price, and canonical URL (`mainevent_slug` or `slug`).
+- [x] Yields ≥100 upcoming Bern events against the current site (live smoke: 676 from
+      15 pages); skips malformed rows without aborting the page or the source.
+- [x] Fixtures: two agenda pages including a main/subevent group, one malformed row, and
+      one outside-window row.
+- [x] No bka code depends on Selenium; it is a `RestClient` client plus pure mapping.
 
 **Verification:**
-- [ ] `./gradlew test --tests 'ch.fribourgevents.source.bka.*'`
-- [ ] `./gradlew test -PincludeTags=live -PliveSource=bka` (manual, logs count)
-- [ ] `./gradlew build`
+- [x] `./gradlew test --tests 'ch.fribourgevents.source.bka.*'`
+- [x] `./gradlew test -PincludeTags=live -PliveSource=bka` (manual, logs count)
+- [x] `./gradlew build`
 
 **Dependencies:** Task 14 · **Size:** M
 
 **Files likely touched:**
+- `BASE/source/bka/BkaClient.java`
 - `BASE/source/bka/BkaEventSource.java`
-- `BASE/source/bka/BkaAgendaParser.java`
-- `BASE/source/bka/BkaEventParser.java`
+- `BASE/source/bka/BkaEvent.java`
 - `TEST/source/bka/BkaEventSourceTest.java`
-- `TEST/resources/fixtures/bka/*.html`
+- `TEST/source/bka/BkaLiveTest.java`
+- `TEST/resources/fixtures/bka/*.json`
+
+**Notes (implementation, 2026-11-04):** the live site no longer matches the research note
+"HTML only": `/agenda` is a React app whose cards show only title, venue, city, category,
+and a date range, while the site's own frontend fetches `/api/events` with full times,
+place address/city/coordinates, descriptions, categories, prices, and status. Scraping
+each of the ~2000 agenda entries would need ~2000 detail requests against a 60-request
+budget, so the operator chose the JSON endpoint (option 1). The client sends
+`date_from`/`date_to` for the window (the API uses calendar-day overlap semantics, so the
+adapter re-checks instant overlap locally), pages by 100 until an empty page, caps at 60,
+and fails loudly at the cap. A live 14-day window needed 15 pages / ~1400 rows → 676
+canonical events in ~32 s at 1 req/s. Rows are showings (`subevent` with `mainevent_id`),
+so they are grouped into one event per production with every occurrence; a multi-day row
+becomes one long occurrence (start at midnight → `allDay`), keeping `payload_hash` stable
+while an exhibition runs. German labels win, descriptions are HTML→text (2000-char cap),
+and `full`/`postponed` statuses degrade to `UNKNOWN` because the model has no sold-out
+state. `RuntimeConfiguration` adds the `bkaEventSource` bean using the shared limiter;
+`BkaLiveTest` is the manual smoke. `docs/SPEC.md` §2/§4/§8/§9 and `docs/sources.md` now
+record the JSON endpoint, mapping, budget, and gaps.
 
 ---
 

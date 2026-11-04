@@ -10,6 +10,8 @@ import ch.fribourgevents.pipeline.DigestPipeline;
 import ch.fribourgevents.pipeline.PipelineOptions;
 import ch.fribourgevents.source.EventSource;
 import ch.fribourgevents.source.PageLoader;
+import ch.fribourgevents.source.bka.BkaClient;
+import ch.fribourgevents.source.bka.BkaEventSource;
 import ch.fribourgevents.source.browser.BrowserProperties;
 import ch.fribourgevents.source.browser.RateLimiter;
 import ch.fribourgevents.source.browser.SeleniumPageLoader;
@@ -41,6 +43,9 @@ public class RuntimeConfiguration {
   /** Public insitu.live origin; the API client appends {@code /api/events}. */
   static final String INSITU_BASE_URL = "https://insitu.live";
 
+  /** Public bka.ch origin; the agenda API client appends {@code /api/events}. */
+  static final String BKA_BASE_URL = "https://www.bka.ch";
+
   @Bean
   RestClient restClient(DigestProperties properties) {
     HttpClient http =
@@ -68,6 +73,11 @@ public class RuntimeConfiguration {
   @Bean
   EventSource insituEventSource(RestClient restClient) {
     return new InsituEventSource(new InsituClient(INSITU_BASE_URL, restClient));
+  }
+
+  @Bean
+  EventSource bkaEventSource(RestClient restClient, RateLimiter rateLimiter) {
+    return new BkaEventSource(new BkaClient(BKA_BASE_URL, restClient, rateLimiter));
   }
 
   /** One limiter for the whole run, so every browser source shares the per-host 1 req/s rule. */

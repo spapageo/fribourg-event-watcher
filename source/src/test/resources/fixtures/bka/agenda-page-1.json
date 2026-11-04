@@ -1,0 +1,105 @@
+{
+  "code": 200,
+  "message": "Success",
+  "total": 4,
+  "data": [
+    {
+      "date": "2026_11",
+      "events": [
+        {
+          "recurrence": "none",
+          "recurrence_week_days": null,
+          "id": 31250,
+          "slug": "bergtone-im-lauterbrunnental",
+          "name": "Bergtöne im Lauterbrunnental",
+          "event_status": "confirmed",
+          "place": {
+            "id": 375,
+            "slug": "minimuseum-murren",
+            "name": "MiniMuseum Mürren",
+            "enabled": true,
+            "address": "Ägerten",
+            "zip": "3825",
+            "city": "Lauterbrunnen",
+            "region": {
+              "id": 15,
+              "label": {"fr": "Reste du canton", "de": "Restlicher Kanton"},
+              "hidden": false
+            },
+            "latitude": 46.563704,
+            "longitude": 7.89702
+          },
+          "categories": [
+            {
+              "id": 16,
+              "label": {"fr": "Patrimoine", "de": "Ausstellungen & Kulturerbe"},
+              "tag_color": "#F29EB7",
+              "hidden": false,
+              "level": 1
+            }
+          ],
+          "date_from": "2025-12-28T20:00:00+01:00",
+          "date_to": "2026-11-30T23:30:00+01:00",
+          "special_rate": "free_entry",
+          "rates": [],
+          "next_date": null,
+          "next_filtered_date": null,
+          "is_multi_day_event": true,
+          "event_type": "mainevent",
+          "mainevent_id": null,
+          "mainevent_slug": null,
+          "labels": {
+            "description": {
+              "de": "<p>MiniMuseum M&uuml;rren: <strong>Bergtöne</strong> im Lauterbrunnental.</p>\r\n<p>Eintritt frei.</p>"
+            }
+          }
+        },
+        {
+          "recurrence": "none",
+          "id": 40001,
+          "slug": "konzert-im-schiff",
+          "name": "Konzert im Schiff",
+          "event_status": "confirmed",
+          "place": null,
+          "place_proposed": {
+            "id": 5001,
+            "name": "Schiff Bern",
+            "address": "Schiffweg 2",
+            "zip": "3005",
+            "city": "Bern",
+            "latitude": 46.948,
+            "longitude": 7.447
+          },
+          "categories": [
+            {"id": 1, "label": {"fr": "Musique", "de": "Musik"}, "level": 1},
+            {"id": 8, "label": {"fr": "Scène", "de": "Bühne"}, "level": 1}
+          ],
+          "date_from": "2026-11-05T20:00:00+01:00",
+          "date_to": "2026-11-05T22:00:00+01:00",
+          "special_rate": null,
+          "rates": [
+            {"price": "13", "labels": {"designation": {"de": "Erwachsene"}}},
+            {"price": "5", "labels": {"designation": {"de": "Kinder (ab 6 Jahren)"}}}
+          ],
+          "is_multi_day_event": false,
+          "event_type": "mainevent",
+          "mainevent_id": null,
+          "mainevent_slug": null,
+          "labels": {"description": {"de": null}}
+        },
+        {
+          "recurrence": "none",
+          "id": 40002,
+          "slug": "kaputtes-event",
+          "name": "   ",
+          "event_status": "confirmed",
+          "place": null,
+          "categories": [],
+          "date_from": "2026-11-06T20:00:00+01:00",
+          "date_to": "2026-11-06T22:00:00+01:00",
+          "labels": {"description": {"de": null}}
+        }
+      ]
+    }
+  ]
+}

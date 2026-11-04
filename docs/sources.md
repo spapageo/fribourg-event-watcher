@@ -84,3 +84,85 @@ inventing a link.
 - No `canton` or price information in the agenda listing.
 - Success criterion 2 in `docs/SPEC.md` §8 says "≥1000 upcoming events"; the agenda currently yields
   886 distinct events (1310 open-day rows). Recorded as a spec/reality gap, not worked around.
+
+---
+
+## bka.ch — canton Bern (agenda JSON API)
+
+Verified live on 2026-11-04. Research background: `docs/research/event-sources.md` §3.1.
+
+### Access
+
+- The public React agenda (`/agenda`) fetches its data from `GET /api/events`. That endpoint is
+  reachable without auth and returns the structured form of the same agenda — including times,
+  place address/city/coordinates, descriptions, categories, prices and status that the rendered
+  cards omit. The earlier research note "HTML only, no API" is outdated.
+- The rendered `/agenda` DOM has 700 cards but no times; each `/event/<slug>` page carries
+  `data-city`/`data-address`, but one detail request per event is impossible within the spec's
+  60-request budget (≈2000 results). The adapter therefore reads the JSON endpoint with a plain
+  `RestClient`; **bka does not use Selenium**. Operator decision recorded in `docs/SPEC.md`.
+- `robots.txt` is not published (the path returns the site's 404 page), per the operator decision.
+
+### Endpoint used
+
+| Endpoint | Notes |
+|---|---|
+| `GET /api/events?limit=100&page=N&date_from=YYYY-MM-DD&date_to=YYYY-MM-DD` | Only endpoint the adapter calls. Rows are grouped by month (`data[].events[]`); `total` is page-local, not the agenda size. |
+
+### Paging budget and quirks
+
+- Paging stops on the first empty `data` array; a hard cap of 60 requests fails the source instead
+  of truncating silently. A live 14-day window (2026-11-04 → 2026-11-18) needed **15 pages /
+  ~1400 rows → 676 canonical events** (~32 s at 1 req/s), comfortably inside the cap.
+- `date_from`/`date_to` are calendar days and use **overlap semantics**: an exhibition that started
+  in 2025 is returned because it still runs inside the window. The adapter re-checks instant
+  overlap client-side because the parameters are dates, not instants.
+- Every request goes through the shared `RateLimiter` (≤1 req/s per host).
+- No `last`/`next` marker exists: page 1 of a non-matching filter returns `data: []`, which is the
+  normal stop condition.
+
+### Rows are showings, not events
+
+- A recurring production appears once per date as an `event_type: "subevent"` row carrying
+  `mainevent_id` and `mainevent_slug`; the umbrella row is `event_type: "mainevent"`. Measured in
+  one 14-day window: 300 rows included 54 subevents.
+- The adapter groups rows by `mainevent_id` (falling back to the row's own `id`), merges, dedupes
+  and start-sorts their occurrences into **one** `SourceEvent`. This keeps a run of performances as
+  one canonical event with several showings; the digest still prints it once per occurrence.
+- A multi-day row (`date_from`..`date_to` spanning weeks) maps to one long occurrence, like insitu,
+  so `payload_hash` stays stable while the exhibition runs. A start at exactly midnight becomes
+  `allDay = true`.
+- `recurrence`/`recurrence_week_days` are **not** expanded: the API already returns each showing as
+  its own row, and expanding weekly rules would invent showings the organiser did not publish.
+
+### Field mapping
+
+| Wire | `SourceEvent` | Notes |
+|---|---|---|
+| `mainevent_id` (or `id`) | `sourceEventId` | Stable identity for the grouped event. |
+| `name` | `title` | First non-blank row of the group. |
+| `place.name` (fallback `place_proposed.name`) | `venueName` | `place` is `null` for ~7% of rows; the proposed place carries the same fields. |
+| `place.address` + `place.zip` | `addressLine` | Joined as `"<address>, <zip>"`. |
+| `place.city` | `city` | Clean city name — feeds the dedup key. |
+| `place.latitude/longitude` | coordinates | `BigDecimal.valueOf(double)`. |
+| `labels.description.de` (fallback `fr`) | `description` | HTML → plain text, capped at 2000 chars. |
+| `categories[].label.de` (fallback `fr`) | `categories` | Union across the group's rows, deduplicated. |
+| `event_status` | `status` | `confirmed → CONFIRMED`, `canceled → CANCELLED`, `full`/`postponed` → `UNKNOWN` (the model has no sold-out state). |
+| `date_from` / `date_to` | one `EventOccurrence` per row | `date_to` is never null in practice. |
+| — | `allDay` | `true` when `date_from` is exactly midnight. Upstream exposes `is_multi_day_event`, but the heuristic matches the digest's existing rule. |
+| `special_rate` / `rates[].price` + `labels.designation.de` | `priceInfo` | `free_entry`/`free_price` → `"Free entry"`; otherwise `"Erwachsene: CHF 13, Kinder (ab 6 Jahren): CHF 5"`. |
+| — | `country` | Absent upstream; `SourceEvent` defaults it to `CH`. |
+| — | `canton` | Not exposed by the agenda JSON; stays `null`. |
+
+### Public event URL
+
+`https://www.bka.ch/event/<mainevent_slug or slug>` — 200 directly. The adapter prefers
+`mainevent_slug` so a grouped run points at the umbrella event; if no slug exists it emits
+`url = null` rather than inventing a link.
+
+### Known gaps (v1)
+
+- No per-showing time details beyond each row's `date_from`/`date_to`; an exhibition's daily opening
+  hours are not modelled (one long occurrence instead).
+- Recurring weekly rules are not expanded into future showings beyond the rows upstream returns.
+- No `canton` field; the whole agenda is canton Bern by definition.

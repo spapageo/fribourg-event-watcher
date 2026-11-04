@@ -22,7 +22,7 @@ map is a separate gate from approval of this document.
 | `domain` | Canonical `Event` / `EventOccurrence` model, source ids, normalization, dedup key, validation | — |
 | `store` | SQLite schema + Flyway migrations, upsert semantics, source refs, canonical event queries | `domain` |
 | `source-insitu` | Adapter for the open `insitu.live` JSON-LD API (canton FR) | `domain` |
-| `source-bka` | Adapter for `bka.ch` HTML (Bern), Selenium fetch + Jsoup parse | `domain` |
+| `source-bka` | Adapter for the `bka.ch` agenda JSON (Bern), RestClient + JSON mapping | `domain` |
 | `source-eventfrog` | Adapter for `eventfrog.ch/de/events/{bern,fribourg}`, Selenium fetch + parse | `domain` |
 | `digest` | Window selection, chronological grouping, channel-agnostic `DigestMessage` + rendering | `domain`, `store` |
 | `notify` | `NotificationSender` SPI, message chunking, delivery result type | `digest` (message type only) |
@@ -107,10 +107,15 @@ Notes / accepted trade-offs:
 - **SQLite is not first-class in Hibernate.** Use Flyway for all schema changes;
   `ddl-auto=validate` in every profile. Hikari pool size 1, `journal_mode=WAL`,
   `busy_timeout=5000`.
-- **Selenium for every HTML source** (operator decision) means a ~600 MB image and
-  slower runs (~30–90 s per source). Accepted for uniformity; all parsing still happens
-  against `driver.getPageSource()` so parser tests never need a browser.
+- **Selenium for HTML sources without a structured feed** (operator decision) means a
+  ~600 MB image and slower runs (~30–90 s per source). Accepted for uniformity; all
+  parsing still happens against `driver.getPageSource()` so parser tests never need a
+  browser.
 - `insitu.live` is an open JSON-LD/Hydra API; it must **not** be driven through Selenium.
+- `bka.ch` exposes the agenda JSON its own frontend uses (`/api/events`); the adapter
+  reads that instead of rendered HTML (operator decision, 2026-11-04). The HTML agenda
+  omits times, descriptions, and addresses, and would need one detail request per event —
+  incompatible with the 60-request budget. `eventfrog.ch` stays on Selenium.
 - Access to all three sources is assumed permitted (operator decision); only the rate
   limits and no-bypass rules in section 7 apply. No outreach or partnership agreement is
   treated as a prerequisite.
@@ -224,7 +229,7 @@ source/                      → Gradle project root; ALL source code
     source/
       EventSource.java       → adapter SPI
       insitu/                → API client, response mapping
-      bka/                   → page walker + HTML parser
+      bka/                   → agenda JSON client + mapper
       eventfrog/             → page walker + parser (embedded top-localities JSON + SSR list)
       browser/               → Selenium driver factory, rate limiter, page loader
     digest/                  → window selection, grouping, DigestMessage, text renderer
@@ -239,7 +244,7 @@ source/                      → Gradle project root; ALL source code
   src/test/java/ch/fribourgevents/...   → mirrors main packages
   src/test/resources/
     fixtures/insitu/*.json
-    fixtures/bka/*.html
+    fixtures/bka/*.json
     fixtures/eventfrog/*.html
 
 docker/Dockerfile            → multi-stage build (Gradle → JRE + Chromium)
@@ -361,7 +366,7 @@ Conventions:
 | Level | Scope | Tooling | Where |
 |---|---|---|---|
 | Unit | normalization, dedup key/matching, window selection, grouping, chunking, HTML escaping | JUnit 5 + AssertJ | `source/src/test/java/.../domain`, `.../digest`, `.../dedup` |
-| Parser | insitu JSON mapping; bka/eventfrog HTML → `SourceEvent` | saved fixtures, no network | `source/src/test/resources/fixtures/**` |
+| Parser | insitu/bka JSON mapping; eventfrog HTML → `SourceEvent` | saved fixtures, no network | `source/src/test/resources/fixtures/**` |
 | Client | insitu pagination, Telegram send/retry, rate limiter | WireMock / fake `RestClient` | `.../source/insitu`, `.../notify/telegram` |
 | Integration | pipeline end-to-end with fake sources + fake notifier + real SQLite/Flyway | `@SpringBootTest` (no web), temp DB file | `.../pipeline` |
 | Architecture | package dependency rules | ArchUnit | `.../ArchitectureTest` |
@@ -434,7 +439,7 @@ v1 is done when all of the following hold:
 1. From a clean clone, `./gradlew build` passes offline (no network, live tests excluded).
 2. `insitu.live` adapter ingests ≥1000 upcoming canton-FR events into SQLite; city
    filter yields Fribourg, Bulle, Gruyères, Murten, Romont, Estavayer, etc.
-3. `bka.ch` adapter yields ≥100 upcoming Bern events from `/agenda` + event pages.
+3. `bka.ch` adapter yields ≥100 upcoming Bern events from its agenda JSON.
 4. `eventfrog.ch` adapter yields ≥50 events per city page (`bern`, `fribourg`).
 5. Digest for a 14-day window is chronological, grouped by local day, and each item
    contains title, start time, venue, city, and a working source URL.
@@ -467,8 +472,10 @@ v1 is done when all of the following hold:
    section 7 still apply.
 3. **insitu filtering** — client-side city filtering and up to 44 paginated API pages
    per run are accepted.
-4. **bka.ch** — a once-weekly scrape of `/agenda` plus event pages is accepted; no
-   robots.txt is published (404).
+4. **bka.ch** — a once-weekly read of the site's agenda JSON (`/api/events`) is
+   accepted; no robots.txt is published (404). The rendered HTML is not scraped because
+   it lacks times/descriptions/addresses and per-event detail requests would exceed the
+   request budget.
 5. **eventfrog.ch** — using the embedded `top-localities` JSON and/or SSR HTML is
    accepted; robots.txt allows `/de/events`.
 6. **Scraper identity** — no contact email in the `User-Agent`.

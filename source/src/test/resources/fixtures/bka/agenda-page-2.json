@@ -1,0 +1,100 @@
+{
+  "code": 200,
+  "message": "Success",
+  "total": 3,
+  "data": [
+    {
+      "date": "2026_11",
+      "events": [
+        {
+          "recurrence": "none",
+          "id": 41555,
+          "slug": "michael-elsener-gute-entscheidung-2",
+          "name": "Michael Elsener: Gute Entscheidung!",
+          "event_status": "confirmed",
+          "place": {
+            "id": 27,
+            "slug": "dampfzentrale-bern",
+            "name": "Dampfzentrale Bern",
+            "enabled": true,
+            "address": "Marzilistrasse 47",
+            "zip": "3005",
+            "city": "Bern",
+            "region": {
+              "id": 10,
+              "label": {"fr": "Ville de Berne", "de": "Stadt Bern"},
+              "hidden": false
+            },
+            "latitude": 46.94118,
+            "longitude": 7.444349
+          },
+          "categories": [
+            {"id": 8, "label": {"fr": "Scène", "de": "Bühne"}, "level": 1}
+          ],
+          "date_from": "2026-11-04T20:00:00+01:00",
+          "date_to": "2026-11-04T22:00:00+01:00",
+          "special_rate": null,
+          "rates": [],
+          "is_multi_day_event": false,
+          "event_type": "mainevent",
+          "mainevent_id": null,
+          "mainevent_slug": null,
+          "labels": {"description": {"de": "<p>Comedy-Abend.</p>"}}
+        },
+        {
+          "recurrence": "none",
+          "id": 41556,
+          "slug": "michael-elsener-gute-entscheidung-3",
+          "name": "Michael Elsener: Gute Entscheidung!",
+          "event_status": "confirmed",
+          "place": {
+            "id": 27,
+            "slug": "dampfzentrale-bern",
+            "name": "Dampfzentrale Bern",
+            "enabled": true,
+            "address": "Marzilistrasse 47",
+            "zip": "3005",
+            "city": "Bern",
+            "region": {
+              "id": 10,
+              "label": {"fr": "Ville de Berne", "de": "Stadt Bern"},
+              "hidden": false
+            },
+            "latitude": 46.94118,
+            "longitude": 7.444349
+          },
+          "categories": [
+            {"id": 8, "label": {"fr": "Scène", "de": "Bühne"}, "level": 1}
+          ],
+          "date_from": "2026-11-05T20:00:00+01:00",
+          "date_to": "2026-11-05T22:00:00+01:00",
+          "special_rate": null,
+          "rates": [],
+          "is_multi_day_event": false,
+          "event_type": "subevent",
+          "mainevent_id": 41555,
+          "mainevent_slug": "michael-elsener-gute-entscheidung-2",
+          "labels": {"description": {"de": "<p>Comedy-Abend.</p>"}}
+        },
+        {
+          "recurrence": "none",
+          "id": 40003,
+          "slug": "spater-termin",
+          "name": "Später Termin",
+          "event_status": "confirmed",
+          "place": null,
+          "categories": [],
+          "date_from": "2026-12-02T20:00:00+01:00",
+          "date_to": "2026-12-02T22:00:00+01:00",
+          "special_rate": null,
+          "rates": [],
+          "is_multi_day_event": false,
+          "event_type": "mainevent",
+          "mainevent_id": null,
+          "mainevent_slug": null,
+          "labels": {"description": {"de": null}}
+        }
+      ]
+    }
+  ]
+}
