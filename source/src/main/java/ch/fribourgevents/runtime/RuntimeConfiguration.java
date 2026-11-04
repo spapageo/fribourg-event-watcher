@@ -9,6 +9,10 @@ import ch.fribourgevents.notify.telegram.TelegramNotificationSender;
 import ch.fribourgevents.pipeline.DigestPipeline;
 import ch.fribourgevents.pipeline.PipelineOptions;
 import ch.fribourgevents.source.EventSource;
+import ch.fribourgevents.source.PageLoader;
+import ch.fribourgevents.source.browser.BrowserProperties;
+import ch.fribourgevents.source.browser.RateLimiter;
+import ch.fribourgevents.source.browser.SeleniumPageLoader;
 import ch.fribourgevents.source.insitu.InsituClient;
 import ch.fribourgevents.source.insitu.InsituEventSource;
 import ch.fribourgevents.store.EventStore;
@@ -31,7 +35,7 @@ import org.springframework.web.client.RestClient;
  * credentials.
  */
 @Configuration(proxyBeanMethods = false)
-@EnableConfigurationProperties(DigestProperties.class)
+@EnableConfigurationProperties({DigestProperties.class, BrowserProperties.class})
 public class RuntimeConfiguration {
 
   /** Public insitu.live origin; the API client appends {@code /api/events}. */
@@ -64,6 +68,21 @@ public class RuntimeConfiguration {
   @Bean
   EventSource insituEventSource(RestClient restClient) {
     return new InsituEventSource(new InsituClient(INSITU_BASE_URL, restClient));
+  }
+
+  /** One limiter for the whole run, so every browser source shares the per-host 1 req/s rule. */
+  @Bean
+  RateLimiter rateLimiter(DigestProperties properties) {
+    return new RateLimiter(properties.rateLimit().perSecond());
+  }
+
+  /**
+   * Headless browser for the HTML sources. The driver itself is created lazily per page, so this
+   * bean boots without Chromium and without launching a browser.
+   */
+  @Bean
+  PageLoader pageLoader(BrowserProperties browser, RateLimiter rateLimiter) {
+    return new SeleniumPageLoader(browser, rateLimiter);
   }
 
   @Bean

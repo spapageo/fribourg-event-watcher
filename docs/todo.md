@@ -533,18 +533,18 @@ Compose sets `shm_size: 1gb` (Chromium needs it; documented in the file header),
 used by HTML sources, with per-host rate limiting and clean shutdown.
 
 **Acceptance criteria:**
-- [ ] `SeleniumPageLoader.load(URI)` returns `driver.getPageSource()` with a page-load
+- [x] `SeleniumPageLoader.load(URI)` returns `driver.getPageSource()` with a page-load
       timeout and explicit wait for `document.readyState == complete`.
-- [ ] Headless flags, window size, user agent `fribourg-events-digest/1.0`; driver
+- [x] Headless flags, window size, user agent `fribourg-events-digest/1.0`; driver
       always quit in `finally`.
-- [ ] `RateLimiter` enforces ≤1 request/second per host using an injectable clock/sleeper.
-- [ ] Tests use a fake `PageLoader`; no browser launches during `build`.
-- [ ] One manual live smoke (load `bka.ch/agenda`) passes.
+- [x] `RateLimiter` enforces ≤1 request/second per host using an injectable clock/sleeper.
+- [x] Tests use a fake `PageLoader`; no browser launches during `build`.
+- [x] One manual live smoke (load `bka.ch/agenda`) passes.
 
 **Verification:**
-- [ ] `./gradlew test --tests 'ch.fribourgevents.source.browser.*'`
-- [ ] `./gradlew test -PincludeTags=live -PliveSource=browser` (manual)
-- [ ] `./gradlew build`
+- [x] `./gradlew test --tests 'ch.fribourgevents.source.browser.*'`
+- [x] `./gradlew test -PincludeTags=live -PliveSource=browser` (manual)
+- [x] `./gradlew build`
 
 **Dependencies:** Task 12 · **Size:** M
 
@@ -554,6 +554,25 @@ used by HTML sources, with per-host rate limiting and clean shutdown.
 - `BASE/source/browser/RateLimiter.java`
 - `BASE/source/browser/BrowserProperties.java`
 - `TEST/source/browser/RateLimiterTest.java`
+
+**Notes (implementation, 2026-11-04):** `PageLoader` is an `AutoCloseable` returning the page
+source and throwing `SourceFetchException` (the adapter SPI's only checked failure), so sources
+never see Selenium types. `SeleniumPageLoader` opens **one Chrome session per page**, configures the
+page-load timeout and window, navigates, waits for `document.readyState == complete`, and quits in
+`finally`; a failing `quit()` is logged, never allowed to mask the load result. That is the
+"single browser session at a time" rule without pooled-driver lifecycle bugs. Tests inject a
+`DriverFactory` (extra file beyond the plan) returning a mocked `WebDriver`, so quit-on-success,
+quit-on-failure, the ready-state timeout message, and the Chrome flags are all covered without
+launching a browser; the live smoke is the only real Chrome run. `RateLimiter` keys state by
+lowercased host, uses an injectable monotonic nano clock + `Sleeper`, and reports interruption via
+`InterruptedException` which the loader restores (`Thread.currentThread().interrupt()`) and wraps.
+`BrowserProperties` (`digest.browser.*`) validates headless, window size, user agent, and both
+timeouts; the new env tunables (`DIGEST_BROWSER_HEADLESS`, `DIGEST_BROWSER_PAGE_LOAD_TIMEOUT`,
+`DIGEST_BROWSER_READY_STATE_TIMEOUT`) are in `.env.example` and `docs/SPEC.md` §3. `RuntimeConfiguration`
+exposes one `RateLimiter` bean (shared by all HTML sources) and one `PageLoader` bean; the driver
+is created lazily, so startup still boots without Chromium. Live smoke: real headless Chrome loaded
+`https://bka.ch/agenda`, 110 937 chars, in ~6 s. Max-per-run (60) is unchanged and stays an adapter
+concern in Tasks 15/16.
 
 ---
 

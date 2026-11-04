@@ -41,6 +41,13 @@ digest:
   db-path: ${DB_PATH:../data/digest.db}
   http:
     request-timeout: ${DIGEST_HTTP_TIMEOUT:10s}
+  browser:
+    headless: ${DIGEST_BROWSER_HEADLESS:true}
+    width: ${DIGEST_BROWSER_WIDTH:1920}
+    height: ${DIGEST_BROWSER_HEIGHT:1080}
+    user-agent: ${DIGEST_BROWSER_USER_AGENT:fribourg-events-digest/1.0}
+    page-load-timeout: ${DIGEST_BROWSER_PAGE_LOAD_TIMEOUT:30s}
+    ready-state-timeout: ${DIGEST_BROWSER_READY_STATE_TIMEOUT:30s}
   rate-limit:
     per-second: ${DIGEST_RATE_LIMIT_PER_SECOND:1}
     max-per-run: ${DIGEST_MAX_REQUESTS_PER_RUN:60}

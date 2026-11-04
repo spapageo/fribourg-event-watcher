@@ -91,7 +91,7 @@ Detailed acceptance criteria, verification, and file lists: `docs/todo.md`.
 - [ ] Cron default is Monday 07:00 Europe/Zurich and env-overridable
 
 ### Phase 4 — Bern sources
-- [ ] Task 14: Browser layer (Selenium `PageLoader`, rate limiter)
+- [x] Task 14: Browser layer (Selenium `PageLoader`, rate limiter)
 - [ ] Task 15: bka.ch adapter
 - [ ] Task 16: eventfrog.ch adapter
 
