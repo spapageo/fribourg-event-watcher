@@ -93,7 +93,7 @@ Detailed acceptance criteria, verification, and file lists: `docs/todo.md`.
 ### Phase 4 — Bern sources
 - [x] Task 14: Browser layer (Selenium `PageLoader`, rate limiter)
 - [x] Task 15: bka.ch adapter
-- [ ] Task 16: eventfrog.ch adapter
+- [x] Task 16: eventfrog.ch adapter
 
 ### Checkpoint D — Three sources
 - [ ] insitu ≥1000 FR events, bka ≥100 Bern events, eventfrog ≥50/city
@@ -101,7 +101,7 @@ Detailed acceptance criteria, verification, and file lists: `docs/todo.md`.
 - [ ] One manual live smoke per HTML source documented
 
 ### Phase 5 — Dedup and polish
-- [ ] Task 17: Cross-source dedup matcher
+- [x] Task 17: Cross-source dedup matcher
 - [ ] Task 18: Pipeline dedup integration and run report footer
 - [ ] Task 19: Documentation and final v1 verification
 

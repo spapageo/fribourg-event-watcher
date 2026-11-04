@@ -1,5 +1,7 @@
 package ch.fribourgevents.runtime;
 
+import ch.fribourgevents.dedup.DedupMatcher;
+import ch.fribourgevents.dedup.DedupProperties;
 import ch.fribourgevents.digest.DigestService;
 import ch.fribourgevents.digest.DigestTextRenderer;
 import ch.fribourgevents.notify.NotificationException;
@@ -38,7 +40,11 @@ import org.springframework.web.client.RestClient;
  * credentials.
  */
 @Configuration(proxyBeanMethods = false)
-@EnableConfigurationProperties({DigestProperties.class, BrowserProperties.class})
+@EnableConfigurationProperties({
+  DigestProperties.class,
+  BrowserProperties.class,
+  DedupProperties.class
+})
 public class RuntimeConfiguration {
 
   /** Public insitu.live origin; the API client appends {@code /api/events}. */
@@ -100,6 +106,12 @@ public class RuntimeConfiguration {
   @Bean
   PageLoader pageLoader(BrowserProperties browser, RateLimiter rateLimiter) {
     return new SeleniumPageLoader(browser, rateLimiter);
+  }
+
+  /** Cross-source matcher; Task 18 wires it into the store's upsert path. */
+  @Bean
+  DedupMatcher dedupMatcher(DedupProperties properties) {
+    return new DedupMatcher(properties);
   }
 
   @Bean

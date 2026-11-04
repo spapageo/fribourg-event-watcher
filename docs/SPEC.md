@@ -189,6 +189,9 @@ DIGEST_BROWSER_PAGE_LOAD_TIMEOUT=30s
 DIGEST_BROWSER_READY_STATE_TIMEOUT=30s
 DIGEST_RATE_LIMIT_PER_SECOND=1
 DIGEST_MAX_REQUESTS_PER_RUN=60
+DEDUP_TITLE_THRESHOLD=0.90
+DEDUP_VENUE_THRESHOLD=0.85
+DEDUP_DATE_WINDOW_DAYS=1
 DIGEST_HTTP_PORT=8080   # compose host port
 PUID=1000                # container runs non-root as PUID:PGID
 PGID=1000
@@ -491,6 +494,10 @@ v1 is done when all of the following hold:
 10. A failed source is retried once after 30 s within the same run, then marked failed.
 11. Interest-based filtering is explicitly post-v1; categories/venues are stored now so
     it can be added without re-ingestion.
+12. Cross-source fuzzy matching defaults: Jaro-Winkler title ≥0.90, venue ≥0.85 when both
+    sides have one (a missing venue passes), first local dates within ±1 day, and the same
+    normalized city. Exact `dedup_key` matches win before fuzzy scoring. All thresholds
+    are configurable through `DEDUP_*`; see `docs/SPEC-domain.md` for the key contract.
 
 ---
 

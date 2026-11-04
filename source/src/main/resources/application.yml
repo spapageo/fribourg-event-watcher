@@ -51,6 +51,10 @@ digest:
   rate-limit:
     per-second: ${DIGEST_RATE_LIMIT_PER_SECOND:1}
     max-per-run: ${DIGEST_MAX_REQUESTS_PER_RUN:60}
+  dedup:
+    title-threshold: ${DEDUP_TITLE_THRESHOLD:0.90}
+    venue-threshold: ${DEDUP_VENUE_THRESHOLD:0.85}
+    date-window-days: ${DEDUP_DATE_WINDOW_DAYS:1}
   telegram:
     bot-token: ${TELEGRAM_BOT_TOKEN:}
     chat-id: ${TELEGRAM_CHAT_ID:}

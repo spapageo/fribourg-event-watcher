@@ -696,18 +696,18 @@ tile and a malformed detail block. Full endpoint/selector/limit notes are in `do
 maps to one canonical event.
 
 **Acceptance criteria:**
-- [ ] Exact match on `dedup_key` wins; otherwise candidates limited to same normalized
+- [x] Exact match on `dedup_key` wins; otherwise candidates limited to same normalized
       city and local date ±1 day.
-- [ ] Fuzzy score combines normalized title and venue similarity (Jaro-Winkler ≥ 0.90
+- [x] Fuzzy score combines normalized title and venue similarity (Jaro-Winkler ≥ 0.90
       title, venue empty-or-≥0.85); thresholds configurable.
-- [ ] Recurring series on different dates are never merged; same title at different
+- [x] Recurring series on different dates are never merged; same title at different
       venues is never merged.
-- [ ] Matcher is pure (given candidates + candidate event → decision) and fixture-tested
+- [x] Matcher is pure (given candidates + candidate event → decision) and fixture-tested
       with real cross-source duplicates.
 
 **Verification:**
-- [ ] `./gradlew test --tests 'ch.fribourgevents.dedup.*'`
-- [ ] `./gradlew build`
+- [x] `./gradlew test --tests 'ch.fribourgevents.dedup.*'`
+- [x] `./gradlew build`
 
 **Dependencies:** Tasks 15, 16 · **Size:** M
 
@@ -716,6 +716,21 @@ maps to one canonical event.
 - `BASE/dedup/DedupProperties.java`
 - `BASE/dedup/MatchDecision.java`
 - `TEST/dedup/DedupMatcherTest.java`
+
+**Notes (implementation, 2026-11-04):** the matcher is a pure function over
+`SourceEvent` + `List<Candidate>` + zone. `Candidate` carries the **stored** dedup key, not a
+key recomputed from current fields, because a canonical event's key is created once and never
+rewritten after a merge. Exact key equality returns immediately with 1.0 scores. Fuzzy
+matching then blocks on the same normalized city (empty city never fuzzily matches) and a
+first-occurrence local date within `DEDUP_DATE_WINDOW_DAYS` (default ±1), and scores both
+normalized title and venue with Jaro-Winkler (default thresholds 0.90/0.85; a missing venue
+passes the venue gate, and the combined score is the mean when both venues exist, title-only
+otherwise). Ties break deterministically by title, venue, then dedup key. Jaro-Winkler is
+implemented locally (no new runtime dependency) and checked against reference values
+(`martha`/`marhta`, `dixon`/`dicksonx`). `DedupProperties` validates the thresholds and date
+window at startup; `RuntimeConfiguration` exposes a `DedupMatcher` bean and
+`application.yml`/`.env.example` carry the three `DEDUP_*` keys. Store/pipeline integration is
+deliberately Task 18; this task only delivers the decision.
 
 ---
 
