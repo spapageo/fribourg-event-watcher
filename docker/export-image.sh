@@ -43,11 +43,11 @@ esac
 
 command -v docker >/dev/null 2>&1 || die "docker is not installed"
 command -v gzip >/dev/null 2>&1 || die "gzip is not installed"
-docker info >/dev/null 2>&1 || die "cannot connect to the Docker daemon (is it running?)"
+sudo docker info >/dev/null 2>&1 || die "cannot connect to the Docker daemon (is it running?)"
 
 if [ "${SKIP_BUILD:-0}" != "1" ]; then
   printf '==> Building %s for %s\n' "$IMAGE" "$PLATFORM"
-  docker build \
+  sudo docker build \
     --platform "$PLATFORM" \
     -f "$ROOT/docker/Dockerfile" \
     -t "$IMAGE" \
@@ -56,12 +56,12 @@ else
   printf '==> SKIP_BUILD=1, exporting the existing %s\n' "$IMAGE"
 fi
 
-docker image inspect "$IMAGE" >/dev/null 2>&1 \
+sudo docker image inspect "$IMAGE" >/dev/null 2>&1 \
   || die "image $IMAGE not found; run without SKIP_BUILD=1 first"
 
 mkdir -p "$OUT_DIR"
 printf '==> Writing %s\n' "$ARCHIVE"
-docker save "$IMAGE" | gzip -9 > "$ARCHIVE"
+sudo docker save "$IMAGE" | gzip -9 > "$ARCHIVE"
 
 # Ship a template whose <Repository> matches this tag, so importing both files cannot
 # accidentally point the Unraid container at a different image.

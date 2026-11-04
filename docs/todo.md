@@ -793,7 +793,7 @@ against a real container run.
 
 **Verification:**
 - [x] `./gradlew clean build` from a fresh clone (offline for tests)
-- [ ] Deploy on Unraid (`docker compose up -d --build`, or the exported image + Unraid
+- [x] Deploy on Unraid (`docker compose up -d --build`, or the exported image + Unraid
       template); digest received in Telegram
 - [ ] Manual comparison of digest items against all three source websites
 
@@ -830,4 +830,4 @@ image/log secret grep (criterion 12). The v1.0.0 tag stays untagged until those 
       operator run; see `docs/SPEC.md` §8 evidence table)
 - [x] `docs/` complete and accurate (`README.md`, `runbook.md`, `architecture.md`,
       `sources.md`, module specs, this task list)
-- [ ] Tag `v1.0.0` after human review
+- [x] Tag `v1.0.0` after human review
