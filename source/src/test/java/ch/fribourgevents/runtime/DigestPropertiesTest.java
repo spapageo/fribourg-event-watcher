@@ -38,6 +38,7 @@ class DigestPropertiesTest {
           assertThat(properties.runOnStartup()).isFalse();
           assertThat(properties.dryRun()).isTrue();
           assertThat(properties.sendFailureNotice()).isFalse();
+          assertThat(properties.showMergedCount()).isTrue();
           assertThat(properties.dbPath()).isEqualTo("../data/digest.db");
           assertThat(properties.telegram().baseUrl()).isEqualTo("https://api.telegram.org");
           assertThat(properties.telegram().partLimit()).isEqualTo(4000);
@@ -59,6 +60,7 @@ class DigestPropertiesTest {
             "digest.window-days=7",
             "digest.run-on-startup=true",
             "digest.send-failure-notice=true",
+            "digest.show-merged-count=false",
             "digest.db-path=/data/digest.db",
             "digest.telegram.bot-token=123456:secret",
             "digest.telegram.chat-id=42",
@@ -79,6 +81,7 @@ class DigestPropertiesTest {
           assertThat(properties.windowDays()).isEqualTo(7);
           assertThat(properties.runOnStartup()).isTrue();
           assertThat(properties.sendFailureNotice()).isTrue();
+          assertThat(properties.showMergedCount()).isFalse();
           assertThat(properties.dbPath()).isEqualTo("/data/digest.db");
           assertThat(properties.telegram().toSettings().botToken()).isEqualTo("123456:secret");
           assertThat(properties.telegram().toSettings().chatId()).isEqualTo("42");

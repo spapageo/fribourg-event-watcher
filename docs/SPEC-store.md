@@ -22,15 +22,33 @@ public record UpsertResult(
     EventEntity event,
     boolean eventCreated,
     boolean sourceRefCreated,
-    boolean payloadChanged) {}
+    boolean payloadChanged) {
+  boolean merged();  // sourceRefCreated && !eventCreated
+}
+
+public record DedupCandidate(
+    Long eventId,
+    String dedupKey,
+    String title,
+    String venueName,
+    String city,
+    List<EventOccurrence> occurrences) {}
 
 public class EventStore {
   UpsertResult upsert(SourceEvent sourceEvent);
   UpsertResult upsert(SourceEvent sourceEvent, Instant seenAt);
+  UpsertResult upsert(SourceEvent sourceEvent, Instant seenAt, Long canonicalEventId);
+  List<DedupCandidate> findDedupCandidates(SourceEvent input, int dayWindowDays);
   List<EventOccurrenceEntity> findOccurrencesOverlapping(Instant from, Instant to);
   Optional<EventEntity> findEvent(Long id);
 }
 ```
+
+`findDedupCandidates` is the read side of cross-source dedup: it returns stored events
+with an occurrence local date within `dayWindowDays` of the input's first occurrence.
+`DedupResolver` (module `dedup`) maps those into the pure matcher and passes the matched
+`eventId` back into the three-argument `upsert`; this keeps the dependency direction
+`dedup → store` instead of making the store depend on scoring logic.
 
 Repositories (`EventRepository`, `EventSourceRefRepository`,
 `EventOccurrenceRepository`) are package-facing Spring Data interfaces and are not part
@@ -56,6 +74,13 @@ of the cross-module contract.
    `YYYY-MM-DD` in `digest.zone` (`Europe/Zurich` by default).
 8. Foreign keys cascade on `event` deletion. SQLite enforcement is enabled per
    connection (`foreign_keys=on`).
+9. A new source record merged into an existing event never weakens it: blanks are
+   filled, description/price keep the longer text, categories are united, and
+   `CANCELLED`/`CONFIRMED` survive `UNKNOWN`/tentative contributors. The canonical title
+   and `dedup_key` are never rewritten.
+10. `event.url` is derived from the attached refs: the lowest `SourceId.priority()`
+    (`insitu`, then `bka`, then `eventfrog`) with a non-null `source_url` wins. A
+    lower-priority source updating its payload therefore cannot steal the digest link.
 
 ## 4. Schema
 
@@ -93,11 +118,12 @@ if ref exists:
         else:                 reconcile occurrences (add/update only)
         ref.payloadHash = hash; ref.sourceUrl = url; ref.lastSeenAt = seenAt
 else:
-    dedupKey = DedupKey(SourceEvent)
-    event    = findByDedupKey(dedupKey) or create event
-    if event existed: merge source fields into it
+    target   = resolver match (canonicalEventId) or findByDedupKey(dedupKey)
+    event    = target or create event
+    if target existed: merge source fields into it (see invariant 9)
     reconcile occurrences (add/update only for an existing event)
     insert ref(firstSeenAt = lastSeenAt = seenAt)
+    event.url = preferred ref url (see invariant 10)
 ```
 
 `PayloadHash` covers title, description, venue, address, city, canton, country,
@@ -142,7 +168,7 @@ with an explicit end still appear while they overlap the window.
 | Test | Covers |
 |---|---|
 | `SchemaValidationTest` | Flyway creates all tables/indexes, `ddl-auto=validate` passes, migrations recorded, FK pragma on |
-| `EventStoreTest` | insert, idempotent replay, payload change, occurrence reconciliation, cross-source merge, window query/order, fixed UTC text, duplicate starts, invalid window |
+| `EventStoreTest` | insert, idempotent replay, payload change, occurrence reconciliation, cross-source merge (exact and resolved/fuzzy), richer-field merge, preferred URL, window query/order, fixed UTC text, duplicate starts, invalid window, candidate date window |
 
 Verification:
 

@@ -38,6 +38,7 @@ digest:
   run-on-startup: ${DIGEST_RUN_ON_STARTUP:false}
   dry-run: ${DIGEST_DRY_RUN:false}
   send-failure-notice: ${DIGEST_SEND_FAILURE_NOTICE:false}
+  show-merged-count: ${DIGEST_SHOW_MERGED_COUNT:true}
   db-path: ${DB_PATH:../data/digest.db}
   http:
     request-timeout: ${DIGEST_HTTP_TIMEOUT:10s}

@@ -2,6 +2,8 @@ package ch.fribourgevents.pipeline;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import ch.fribourgevents.dedup.DedupMatcher;
+import ch.fribourgevents.dedup.DedupResolver;
 import ch.fribourgevents.digest.DigestMessage;
 import ch.fribourgevents.digest.DigestService;
 import ch.fribourgevents.digest.DigestTextRenderer;
@@ -126,6 +128,10 @@ class DigestPipelineTest {
         .containsExactly(Status.OK, Status.OK);
     assertThat(result.sources()).extracting(SourceSyncResult::pagesFetched).containsExactly(2, 3);
     assertThat(result.sources()).extracting(SourceSyncResult::eventsSeen).containsExactly(2, 1);
+    assertThat(result.sources()).extracting(SourceSyncResult::eventsInserted).containsExactly(2, 1);
+    assertThat(result.sources()).extracting(SourceSyncResult::eventsMerged).containsExactly(0, 0);
+    assertThat(result.eventsInserted()).isEqualTo(3);
+    assertThat(result.eventsMerged()).isZero();
     assertThat(result.selectedOccurrenceIds()).hasSize(3);
     assertThat(result.delivery()).isPresent();
     assertThat(result.delivery().orElseThrow().status()).isEqualTo(DeliveryStatus.DELIVERED);
@@ -205,7 +211,8 @@ class DigestPipelineTest {
   void sendsAFailureNoticeOnlyWhenConfigured() {
     FakeEventSource insitu = FakeEventSource.failing(SourceId.INSITU, "insitu: boom");
 
-    PipelineResult result = pipeline(List.of(insitu), new PipelineOptions(false, true)).run(WINDOW);
+    PipelineResult result =
+        pipeline(List.of(insitu), new PipelineOptions(false, true, true)).run(WINDOW);
 
     assertThat(result.status()).isEqualTo(RunStatus.FAILED);
     assertThat(notifier.sent()).hasSize(1);
@@ -223,7 +230,8 @@ class DigestPipelineTest {
             List.of(event(SourceId.INSITU, "i-1", "Cinéma Zéro", "2026-11-03T19:00:00Z")),
             1);
 
-    PipelineResult result = pipeline(List.of(insitu), new PipelineOptions(true, false)).run(WINDOW);
+    PipelineResult result =
+        pipeline(List.of(insitu), new PipelineOptions(true, false, true)).run(WINDOW);
 
     assertThat(result.status()).isEqualTo(RunStatus.SUCCESS);
     assertThat(result.delivery()).isEmpty();
@@ -257,10 +265,89 @@ class DigestPipelineTest {
         .satisfies(line -> assertThat(line).contains("status=FAILED", "telegram 400: Bad Request"));
   }
 
+  @Test
+  void mergesCrossSourceDuplicateIntoOneDigestItemAndReportsIt() {
+    DuplicatePair duplicates = duplicateEvents();
+    FakeEventSource insitu =
+        FakeEventSource.returning(SourceId.INSITU, List.of(duplicates.insitu()));
+    FakeEventSource eventfrog =
+        FakeEventSource.returning(SourceId.EVENTFROG, List.of(duplicates.eventfrog()));
+
+    PipelineResult result =
+        pipeline(List.of(insitu, eventfrog), PipelineOptions.defaults()).run(WINDOW);
+
+    assertThat(result.status()).isEqualTo(RunStatus.SUCCESS);
+    assertThat(result.eventsSeen()).isEqualTo(2);
+    assertThat(result.eventsInserted()).isEqualTo(1);
+    assertThat(result.eventsMerged()).isEqualTo(1);
+    assertThat(result.sources()).extracting(SourceSyncResult::eventsInserted).containsExactly(1, 0);
+    assertThat(result.sources()).extracting(SourceSyncResult::eventsMerged).containsExactly(0, 1);
+
+    assertThat(notifier.sent()).hasSize(1);
+    DigestMessage sent = notifier.sent().getFirst();
+    assertThat(sent.itemCount()).isEqualTo(1);
+    assertThat(sent.days().getFirst().items().getFirst().url())
+        .isEqualTo(URI.create("https://insitu.test/i-dup"));
+    assertThat(sent.notes())
+        .singleElement()
+        .asString()
+        .contains("1 event", "more than one source", "merged");
+
+    assertThat(rowCount("event")).isEqualTo(1);
+    assertThat(rowCount("event_source_ref")).isEqualTo(2);
+    assertThat(rowCount("event_occurrence")).isEqualTo(1);
+
+    assertThat(logs())
+        .filteredOn(line -> line.startsWith("digest_run_finished "))
+        .singleElement()
+        .satisfies(line ->
+            assertThat(line).contains("events_seen=2", "events_inserted=1", "events_merged=1"));
+  }
+
+  @Test
+  void omitsTheMergedCountFooterWhenDisabled() {
+    DuplicatePair duplicates = duplicateEvents();
+    FakeEventSource insitu =
+        FakeEventSource.returning(SourceId.INSITU, List.of(duplicates.insitu()));
+    FakeEventSource eventfrog =
+        FakeEventSource.returning(SourceId.EVENTFROG, List.of(duplicates.eventfrog()));
+
+    PipelineResult result =
+        pipeline(List.of(insitu, eventfrog), new PipelineOptions(false, false, false)).run(WINDOW);
+
+    assertThat(result.eventsMerged()).isEqualTo(1);
+    assertThat(notifier.sent().getFirst().notes()).isEmpty();
+    assertThat(new DigestTextRenderer().render(notifier.sent().getFirst()))
+        .doesNotContain("merged");
+  }
+
+  private static DuplicatePair duplicateEvents() {
+    SourceEvent insitu =
+        event(
+            SourceId.INSITU,
+            "i-dup",
+            "Cinéma – Zéro!",
+            "Nouveau Monde",
+            "2026-11-06T19:30:00Z",
+            "https://insitu.test/i-dup");
+    SourceEvent eventfrog =
+        event(
+            SourceId.EVENTFROG,
+            "e-dup",
+            "Cinéma – Zéro!",
+            "Nouveau Monde, Fribourg",
+            "2026-11-06T19:30:00Z",
+            "https://eventfrog.test/e-dup");
+    return new DuplicatePair(insitu, eventfrog);
+  }
+
+  private record DuplicatePair(SourceEvent insitu, SourceEvent eventfrog) {}
+
   private DigestPipeline pipeline(List<EventSource> sources, PipelineOptions options) {
     return new DigestPipeline(
         sources,
         store,
+        new DedupResolver(store, new DedupMatcher(), ZURICH),
         digestService,
         notifier,
         new DigestTextRenderer(),
@@ -282,19 +369,24 @@ class DigestPipelineTest {
   }
 
   private static SourceEvent event(SourceId source, String id, String title, String start) {
+    return event(source, id, title, "Venue " + id, start, "https://example.test/" + id);
+  }
+
+  private static SourceEvent event(
+      SourceId source, String id, String title, String venue, String start, String url) {
     return new SourceEvent(
         source,
         id,
         title,
         null,
-        "Venue " + id,
+        venue,
         null,
         "Fribourg",
         null,
         null,
         null,
         null,
-        URI.create("https://example.test/" + id),
+        URI.create(url),
         Set.of("culture"),
         null,
         null,

@@ -1,5 +1,6 @@
 package ch.fribourgevents.pipeline;
 
+import ch.fribourgevents.dedup.DedupResolver;
 import ch.fribourgevents.digest.DigestMessage;
 import ch.fribourgevents.digest.DigestService;
 import ch.fribourgevents.digest.DigestTextRenderer;
@@ -15,6 +16,7 @@ import ch.fribourgevents.source.EventSource;
 import ch.fribourgevents.source.SourceFetch;
 import ch.fribourgevents.source.SourceFetchException;
 import ch.fribourgevents.store.EventStore;
+import ch.fribourgevents.store.UpsertResult;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -22,6 +24,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.function.ToIntFunction;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -56,6 +59,7 @@ public final class DigestPipeline {
 
   private final List<EventSource> sources;
   private final EventStore store;
+  private final DedupResolver dedupResolver;
   private final DigestService digestService;
   private final NotificationSender sender;
   private final DigestTextRenderer renderer;
@@ -65,6 +69,7 @@ public final class DigestPipeline {
   public DigestPipeline(
       List<EventSource> sources,
       EventStore store,
+      DedupResolver dedupResolver,
       DigestService digestService,
       NotificationSender sender,
       DigestTextRenderer renderer,
@@ -72,6 +77,7 @@ public final class DigestPipeline {
       PipelineOptions options) {
     this.sources = List.copyOf(Objects.requireNonNull(sources, "sources"));
     this.store = Objects.requireNonNull(store, "store");
+    this.dedupResolver = Objects.requireNonNull(dedupResolver, "dedupResolver");
     this.digestService = Objects.requireNonNull(digestService, "digestService");
     this.sender = Objects.requireNonNull(sender, "sender");
     this.renderer = Objects.requireNonNull(renderer, "renderer");
@@ -114,8 +120,9 @@ public final class DigestPipeline {
     }
 
     DigestMessage message = digestService.select(window);
-    if (!failed.isEmpty()) {
-      message = message.withNotes(List.of(unavailableFooter(failed)));
+    List<String> notes = footerNotes(outcomes);
+    if (!notes.isEmpty()) {
+      message = message.withNotes(notes);
     }
     List<Long> occurrenceIds = selectedOccurrenceIds(message);
 
@@ -144,12 +151,26 @@ public final class DigestPipeline {
     SourceFetch fetch = null;
     try {
       fetch = source.fetch(window);
+      int inserted = 0;
+      int merged = 0;
       for (SourceEvent event : fetch.events()) {
-        store.upsert(event);
+        Optional<Long> canonical = dedupResolver.findCanonicalEventId(event);
+        UpsertResult result = store.upsert(event, clock.instant(), canonical.orElse(null));
+        if (result.eventCreated()) {
+          inserted++;
+        } else if (result.merged()) {
+          merged++;
+        }
       }
       SourceSyncResult result =
           SourceSyncResult.ok(
-              source.id(), startedAt, clock.instant(), fetch.pagesFetched(), fetch.eventCount());
+              source.id(),
+              startedAt,
+              clock.instant(),
+              fetch.pagesFetched(),
+              fetch.eventCount(),
+              inserted,
+              merged);
       logSourceSync(runId, result);
       return result;
     } catch (SourceFetchException | RuntimeException e) {
@@ -214,10 +235,14 @@ public final class DigestPipeline {
       Instant startedAt) {
     Instant finishedAt = clock.instant();
     log.info(
-        "digest_run_finished run_id={} status={} events_selected={} delivered={}",
+        "digest_run_finished run_id={} status={} events_selected={} events_seen={}"
+            + " events_inserted={} events_merged={} delivered={}",
         runId,
         status,
         occurrenceIds.size(),
+        total(outcomes, SourceSyncResult::eventsSeen),
+        total(outcomes, SourceSyncResult::eventsInserted),
+        total(outcomes, SourceSyncResult::eventsMerged),
         delivery.isPresent());
     return new PipelineResult(
         runId, window, status, outcomes, occurrenceIds, delivery, startedAt, finishedAt);
@@ -226,12 +251,14 @@ public final class DigestPipeline {
   private void logSourceSync(String runId, SourceSyncResult result) {
     log.info(
         "source_sync run_id={} source={} status={} pages_fetched={} events_seen={}"
-            + " duration_ms={} error={}",
+            + " events_inserted={} events_merged={} duration_ms={} error={}",
         runId,
         result.source().wireName(),
         result.status(),
         result.pagesFetched(),
         result.eventsSeen(),
+        result.eventsInserted(),
+        result.eventsMerged(),
         result.durationMillis(),
         result.error() == null ? "" : result.error());
   }
@@ -261,6 +288,30 @@ public final class DigestPipeline {
         0,
         0,
         List.of("Digest failed: no source could be read (" + names(failed) + ")."));
+  }
+
+  /**
+   * Footer paragraphs for this run: unavailable sources, then the dedup summary when enabled. The
+   * failure note is never suppressed; the merged count is a reporting nicety and configurable.
+   */
+  private List<String> footerNotes(List<SourceSyncResult> outcomes) {
+    List<String> notes = new ArrayList<>();
+    List<SourceId> failed = failedSources(outcomes);
+    if (!failed.isEmpty()) {
+      notes.add(unavailableFooter(failed));
+    }
+    int merged = total(outcomes, SourceSyncResult::eventsMerged);
+    if (options.showMergedCount() && merged > 0) {
+      notes.add(
+          merged
+              + (merged == 1 ? " event" : " events")
+              + " appeared in more than one source and were merged.");
+    }
+    return notes;
+  }
+
+  private static int total(List<SourceSyncResult> outcomes, ToIntFunction<SourceSyncResult> count) {
+    return outcomes.stream().mapToInt(count).sum();
   }
 
   private static String unavailableFooter(List<SourceId> failed) {

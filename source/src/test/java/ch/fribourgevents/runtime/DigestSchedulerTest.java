@@ -128,6 +128,7 @@ class DigestSchedulerTest {
         false,
         false,
         false,
+        true,
         null,
         new DigestProperties.Telegram("123456:secret", "42", null, 4000),
         null,

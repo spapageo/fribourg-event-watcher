@@ -25,7 +25,7 @@ class PipelineResultTest {
 
   @Test
   void reportsFailedSourcesAndDeliveryPresence() {
-    SourceSyncResult ok = SourceSyncResult.ok(SourceId.EVENTFROG, STARTED, FINISHED, 3, 12);
+    SourceSyncResult ok = SourceSyncResult.ok(SourceId.EVENTFROG, STARTED, FINISHED, 3, 12, 10, 2);
     SourceSyncResult failed =
         SourceSyncResult.failed(SourceId.BKA, STARTED, FINISHED, 1, 0, "bka: selector broke");
 
@@ -41,6 +41,9 @@ class PipelineResultTest {
             FINISHED);
 
     assertThat(result.failedSources()).containsExactly(SourceId.BKA);
+    assertThat(result.eventsSeen()).isEqualTo(12);
+    assertThat(result.eventsInserted()).isEqualTo(10);
+    assertThat(result.eventsMerged()).isEqualTo(2);
     assertThat(result.delivered()).isFalse();
     assertThat(ok.durationMillis()).isEqualTo(4000);
     assertThat(ok.failed()).isFalse();
@@ -72,15 +75,16 @@ class PipelineResultTest {
                 FINISHED,
                 STARTED));
     assertThatIllegalArgumentException()
-        .isThrownBy(() -> SourceSyncResult.ok(SourceId.INSITU, FINISHED, STARTED, 1, 1));
+        .isThrownBy(() -> SourceSyncResult.ok(SourceId.INSITU, FINISHED, STARTED, 1, 1, 1, 0));
     assertThatIllegalArgumentException()
-        .isThrownBy(() -> SourceSyncResult.ok(SourceId.INSITU, STARTED, FINISHED, -1, 1));
-    assertThatIllegalArgumentException()
-        .isThrownBy(() ->
-            new SourceSyncResult(SourceId.INSITU, Status.FAILED, STARTED, FINISHED, 0, 0, ""));
+        .isThrownBy(() -> SourceSyncResult.ok(SourceId.INSITU, STARTED, FINISHED, -1, 1, 1, 0));
     assertThatIllegalArgumentException()
         .isThrownBy(() ->
             new SourceSyncResult(
-                SourceId.INSITU, Status.OK, STARTED, FINISHED, 0, 0, "unexpected"));
+                SourceId.INSITU, Status.FAILED, STARTED, FINISHED, 0, 0, 0, 0, ""));
+    assertThatIllegalArgumentException()
+        .isThrownBy(() ->
+            new SourceSyncResult(
+                SourceId.INSITU, Status.OK, STARTED, FINISHED, 0, 0, 0, 0, "unexpected"));
   }
 }

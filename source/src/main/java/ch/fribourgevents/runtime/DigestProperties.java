@@ -25,6 +25,7 @@ import org.springframework.scheduling.support.CronExpression;
  * @param runOnStartup run the pipeline once when the application starts
  * @param dryRun render and log the digest instead of sending it
  * @param sendFailureNotice send a short notice when every source fails
+ * @param showMergedCount append a footer line when cross-source dedup merged events
  * @param dbPath SQLite file path; also feeds {@code spring.datasource.url}
  * @param telegram Bot API settings
  * @param sources per-adapter toggles
@@ -39,6 +40,7 @@ public record DigestProperties(
     boolean runOnStartup,
     boolean dryRun,
     boolean sendFailureNotice,
+    Boolean showMergedCount,
     String dbPath,
     Telegram telegram,
     Sources sources,
@@ -71,6 +73,7 @@ public record DigestProperties(
       throw new IllegalArgumentException("digest.window-days must be positive, was " + windowDays);
     }
 
+    showMergedCount = showMergedCount == null ? Boolean.TRUE : showMergedCount;
     dbPath = dbPath == null || dbPath.isBlank() ? DEFAULT_DB_PATH : dbPath.strip();
     telegram = telegram == null ? new Telegram(null, null, null, 0) : telegram;
     if (!dryRun) {

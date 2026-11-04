@@ -167,6 +167,8 @@ class EventStoreTest {
 
     assertThat(second.eventCreated()).isFalse();
     assertThat(second.sourceRefCreated()).isTrue();
+    assertThat(second.merged()).isTrue();
+    assertThat(first.merged()).isFalse();
     assertThat(second.event().getId()).isEqualTo(first.event().getId());
     assertThat(events.count()).isEqualTo(1);
     assertThat(sourceRefs.count()).isEqualTo(2);
@@ -274,6 +276,108 @@ class EventStoreTest {
   }
 
   @Test
+  void attachesResolvedCandidateAndKeepsTheRicherSourceFields() {
+    Instant firstSeen = Instant.parse("2026-02-01T10:00:00Z");
+    Instant mergedSeen = Instant.parse("2026-02-02T10:00:00Z");
+    SourceEvent insitu =
+        event(SourceId.INSITU, "i-1", "Cinema Zero", occurrence("2026-03-01T19:00:00Z"));
+    SourceEvent eventfrog =
+        new SourceEvent(
+            SourceId.EVENTFROG,
+            "e-1",
+            "Cinéma – Zéro!",
+            "A much longer description from eventfrog",
+            "Nouveau Monde",
+            "Rue de la Gare 1",
+            "Fribourg",
+            "FR",
+            "CH",
+            BigDecimal.valueOf(46.8065),
+            BigDecimal.valueOf(7.1610),
+            URI.create("https://example.test/eventfrog/e-1"),
+            Set.of("cinema"),
+            "CHF 30 (reduced 20)",
+            EventStatus.CONFIRMED,
+            List.of(
+                new EventOccurrence(Instant.parse("2026-03-01T19:00:00Z"), null, false),
+                new EventOccurrence(Instant.parse("2026-03-02T19:00:00Z"), null, false)));
+
+    UpsertResult first = store.upsert(insitu, firstSeen);
+    UpsertResult merged = store.upsert(eventfrog, mergedSeen, first.event().getId());
+    flushAndClear();
+
+    assertThat(first.merged()).isFalse();
+    assertThat(merged.eventCreated()).isFalse();
+    assertThat(merged.sourceRefCreated()).isTrue();
+    assertThat(merged.merged()).isTrue();
+    assertThat(merged.event().getId()).isEqualTo(first.event().getId());
+    assertThat(events.count()).isEqualTo(1);
+    assertThat(sourceRefs.count()).isEqualTo(2);
+    assertThat(occurrences.count()).isEqualTo(2);
+
+    EventEntity event = events.findById(first.event().getId()).orElseThrow();
+    assertThat(event.getDedupKey()).isEqualTo(first.event().getDedupKey());
+    assertThat(event.getTitle()).isEqualTo("Cinema Zero");
+    assertThat(event.getDescription()).isEqualTo("A much longer description from eventfrog");
+    assertThat(event.getCategories()).isEqualTo("cinema\nconcert\ntheatre");
+    assertThat(event.getPriceInfo()).isEqualTo("CHF 30 (reduced 20)");
+    assertThat(event.getUrl()).isEqualTo("https://example.test/insitu/i-1");
+    assertThat(event.getUpdatedAt()).isEqualTo(mergedSeen);
+  }
+
+  @Test
+  void keepsThePreferredSourceUrlWhenANonPreferredSourceChangesItsPayload() {
+    Instant firstSeen = Instant.parse("2026-02-01T10:00:00Z");
+    Instant mergedSeen = Instant.parse("2026-02-02T10:00:00Z");
+    Instant laterSeen = Instant.parse("2026-02-03T10:00:00Z");
+    SourceEvent insitu =
+        event(SourceId.INSITU, "i-1", "Concert", occurrence("2026-03-01T19:00:00Z"));
+    SourceEvent eventfrog =
+        event(SourceId.EVENTFROG, "e-1", "Concert", occurrence("2026-03-01T19:00:00Z"));
+    UpsertResult first = store.upsert(insitu, firstSeen);
+    store.upsert(eventfrog, mergedSeen, first.event().getId());
+
+    SourceEvent eventfrogMoved =
+        moved(
+            SourceId.EVENTFROG,
+            "e-1",
+            "https://example.test/eventfrog/moved",
+            "2026-03-01T20:00:00Z");
+    store.upsert(eventfrogMoved, laterSeen);
+    flushAndClear();
+
+    assertThat(events.findById(first.event().getId()).orElseThrow().getUrl())
+        .isEqualTo("https://example.test/insitu/i-1");
+
+    SourceEvent insituMoved =
+        moved(SourceId.INSITU, "i-1", "https://example.test/insitu/moved", "2026-03-01T21:00:00Z");
+    store.upsert(insituMoved, laterSeen);
+    flushAndClear();
+
+    assertThat(events.findById(first.event().getId()).orElseThrow().getUrl())
+        .isEqualTo("https://example.test/insitu/moved");
+  }
+
+  @Test
+  void findsDedupCandidatesWithinTheFirstOccurrenceDateWindow() {
+    store.upsert(
+        event(SourceId.INSITU, "early", "Early", occurrence("2026-03-01T19:00:00Z")),
+        Instant.parse("2026-02-01T10:00:00Z"));
+    store.upsert(
+        event(SourceId.INSITU, "late", "Late", occurrence("2026-03-10T19:00:00Z")),
+        Instant.parse("2026-02-01T10:00:00Z"));
+    flushAndClear();
+
+    List<DedupCandidate> candidates =
+        store.findDedupCandidates(
+            event(SourceId.EVENTFROG, "probe", "Probe", occurrence("2026-03-02T19:00:00Z")), 1);
+
+    assertThat(candidates).extracting(DedupCandidate::title).containsExactly("Early");
+    assertThat(candidates.getFirst().occurrences()).hasSize(1);
+    assertThat(candidates.getFirst().dedupKey()).hasSize(64);
+  }
+
+  @Test
   void rejectsInvalidWindow() {
     assertThatThrownBy(() ->
             store.findOccurrencesOverlapping(
@@ -319,5 +423,25 @@ class EventStoreTest {
 
   private static List<EventOccurrence> occurrences(String... starts) {
     return java.util.Arrays.stream(starts).map(EventStoreTest::occurrence).toList();
+  }
+
+  private static SourceEvent moved(SourceId source, String id, String url, String start) {
+    return new SourceEvent(
+        source,
+        id,
+        "Concert",
+        "Description",
+        "Nouveau Monde",
+        "Rue de la Gare 1",
+        "Fribourg",
+        "FR",
+        "CH",
+        BigDecimal.valueOf(46.8065),
+        BigDecimal.valueOf(7.1610),
+        URI.create(url),
+        Set.of("theatre", "concert"),
+        "CHF 20",
+        EventStatus.CONFIRMED,
+        List.of(occurrence(start)));
   }
 }

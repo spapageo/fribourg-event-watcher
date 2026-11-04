@@ -1,6 +1,7 @@
 package ch.fribourgevents.store;
 
 import java.time.Instant;
+import java.util.Collection;
 import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -9,6 +10,8 @@ import org.springframework.data.repository.query.Param;
 public interface EventOccurrenceRepository extends JpaRepository<EventOccurrenceEntity, Long> {
 
   List<EventOccurrenceEntity> findByEvent_Id(Long eventId);
+
+  List<EventOccurrenceEntity> findByEvent_IdIn(Collection<Long> eventIds);
 
   /**
    * Occurrences intersecting {@code [from, to)}. An occurrence without an end is treated as

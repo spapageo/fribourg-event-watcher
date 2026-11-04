@@ -175,6 +175,7 @@ DIGEST_WINDOW_DAYS=14
 DIGEST_RUN_ON_STARTUP=true
 DIGEST_DRY_RUN=false
 DIGEST_SEND_FAILURE_NOTICE=false
+DIGEST_SHOW_MERGED_COUNT=true
 SOURCE_INSITU_ENABLED=true
 SOURCE_BKA_ENABLED=true
 SOURCE_EVENTFROG_ENABLED=true
@@ -295,9 +296,9 @@ Consequences, accepted for v1:
 | Event | Required fields |
 |---|---|
 | `digest_run_started` | `run_id`, `window_from`, `window_to`, enabled sources |
-| `source_sync` | `run_id`, `source`, `status`, `pages_fetched`, `events_seen`, `duration_ms`, `error` |
+| `source_sync` | `run_id`, `source`, `status`, `pages_fetched`, `events_seen`, `events_inserted`, `events_merged`, `duration_ms`, `error` |
 | `notification_delivery` | `run_id`, `channel`, `status`, `message_count`, `external_id`, `error` |
-| `digest_run_finished` | `run_id`, `status` (`SUCCESS`/`PARTIAL`/`FAILED`), `events_selected`, `delivered` |
+| `digest_run_finished` | `run_id`, `status` (`SUCCESS`/`PARTIAL`/`FAILED`), `events_selected`, `events_seen`, `events_inserted`, `events_merged`, `delivered` |
 
 Logs are the operator-facing record; they are not queryable history and may rotate with
 the container. That is accepted for v1.

@@ -68,6 +68,21 @@ public record PipelineResult(
     return sources.stream().filter(SourceSyncResult::failed).map(SourceSyncResult::source).toList();
   }
 
+  /** Total events every source returned during this run. */
+  public int eventsSeen() {
+    return sources.stream().mapToInt(SourceSyncResult::eventsSeen).sum();
+  }
+
+  /** Canonical events created during this run. */
+  public int eventsInserted() {
+    return sources.stream().mapToInt(SourceSyncResult::eventsInserted).sum();
+  }
+
+  /** Source records attached to an existing canonical event during this run. */
+  public int eventsMerged() {
+    return sources.stream().mapToInt(SourceSyncResult::eventsMerged).sum();
+  }
+
   /** True when a notification was handed to a transport (dry runs report {@code false}). */
   public boolean delivered() {
     return delivery.isPresent();

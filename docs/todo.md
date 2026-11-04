@@ -740,17 +740,17 @@ deliberately Task 18; this task only delivers the decision.
 canonical events, and add a run report/footer with source and dedup counts.
 
 **Acceptance criteria:**
-- [ ] Upsert finds a canonical match, attaches `(source, source_event_id)`, adds new
+- [x] Upsert finds a canonical match, attaches `(source, source_event_id)`, adds new
       occurrences, and keeps the richer field values (non-null/longer description).
-- [ ] Digest shows the merged event once, with the preferred source URL.
-- [ ] Run summary carries `events_seen`, `events_inserted`, `events_merged`, per-source status (memory/log only).
-- [ ] Message footer lists partial/failed sources and merged counts (configurable).
-- [ ] Integration test: same event from insitu + eventfrog fixture → one digest item,
+- [x] Digest shows the merged event once, with the preferred source URL.
+- [x] Run summary carries `events_seen`, `events_inserted`, `events_merged`, per-source status (memory/log only).
+- [x] Message footer lists partial/failed sources and merged counts (configurable).
+- [x] Integration test: same event from insitu + eventfrog fixture → one digest item,
       two `event_source_ref` rows.
 
 **Verification:**
-- [ ] `./gradlew test --tests 'ch.fribourgevents.pipeline.*' --tests 'ch.fribourgevents.store.*'`
-- [ ] `./gradlew build`
+- [x] `./gradlew test --tests 'ch.fribourgevents.pipeline.*' --tests 'ch.fribourgevents.store.*'`
+- [x] `./gradlew build`
 
 **Dependencies:** Task 17 · **Size:** M
 
@@ -759,6 +759,22 @@ canonical events, and add a run report/footer with source and dedup counts.
 - `BASE/pipeline/DigestPipeline.java`
 - `BASE/digest/DigestTextRenderer.java`
 - `TEST/pipeline/DedupPipelineTest.java`
+
+**Notes (implementation, 2026-11-04):** resolution is split to keep the module graph
+`dedup → store` (per `docs/SPEC.md` §0): `DedupResolver` (in `dedup`) pulls the blocked
+candidate set from `EventStore.findDedupCandidates` (same normalized date window as the
+matcher), runs `DedupMatcher`, and returns the canonical event id; the pipeline passes that
+id into `EventStore.upsert(event, seenAt, canonicalEventId)`. Upsert keeps the exact-key
+fallback for direct callers. Merging fills blanks, keeps the longer description/price text,
+unions categories, and lets `CANCELLED`/`CONFIRMED` survive `UNKNOWN`/tentative
+contributors; the canonical title and dedup key are never rewritten. `event.url` is
+recomputed from the attached refs by `SourceId.priority()`
+(`insitu → bka → eventfrog`), so the merged digest item links to the richest source even
+when a lower-priority source writes last. `UpsertResult.merged()` is
+`sourceRefCreated && !eventCreated`; `SourceSyncResult` carries per-source
+inserted/merged counts, aggregated on `PipelineResult` and logged on both `source_sync` and
+`digest_run_finished`. The footer adds the merged count when `DIGEST_SHOW_MERGED_COUNT`
+(default `true`) is on, after any unavailable-source note.
 
 ---
 

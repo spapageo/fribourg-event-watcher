@@ -2,6 +2,7 @@ package ch.fribourgevents.runtime;
 
 import ch.fribourgevents.dedup.DedupMatcher;
 import ch.fribourgevents.dedup.DedupProperties;
+import ch.fribourgevents.dedup.DedupResolver;
 import ch.fribourgevents.digest.DigestService;
 import ch.fribourgevents.digest.DigestTextRenderer;
 import ch.fribourgevents.notify.NotificationException;
@@ -23,6 +24,7 @@ import ch.fribourgevents.source.insitu.InsituEventSource;
 import ch.fribourgevents.store.EventStore;
 import java.net.http.HttpClient;
 import java.time.Clock;
+import java.time.ZoneId;
 import java.util.List;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -108,10 +110,16 @@ public class RuntimeConfiguration {
     return new SeleniumPageLoader(browser, rateLimiter);
   }
 
-  /** Cross-source matcher; Task 18 wires it into the store's upsert path. */
+  /** Cross-source matcher; the resolver below combines it with stored candidates. */
   @Bean
   DedupMatcher dedupMatcher(DedupProperties properties) {
     return new DedupMatcher(properties);
+  }
+
+  /** Resolves each incoming event to a stored canonical event before the store writes it. */
+  @Bean
+  DedupResolver dedupResolver(EventStore store, DedupMatcher matcher, ZoneId zone) {
+    return new DedupResolver(store, matcher, zone);
   }
 
   @Bean
@@ -119,6 +127,7 @@ public class RuntimeConfiguration {
       List<EventSource> sources,
       DigestProperties properties,
       EventStore store,
+      DedupResolver dedupResolver,
       DigestService digestService,
       NotificationSender sender,
       Clock clock) {
@@ -127,10 +136,12 @@ public class RuntimeConfiguration {
     return new DigestPipeline(
         enabled,
         store,
+        dedupResolver,
         digestService,
         sender,
         new DigestTextRenderer(),
         clock,
-        new PipelineOptions(properties.dryRun(), properties.sendFailureNotice()));
+        new PipelineOptions(
+            properties.dryRun(), properties.sendFailureNotice(), properties.showMergedCount()));
   }
 }

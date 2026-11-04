@@ -15,6 +15,8 @@ import java.util.Objects;
  * @param finishedAt when the last upsert returned or the failure was caught
  * @param pagesFetched upstream pages/requests the adapter read ({@code 0} on failure before paging)
  * @param eventsSeen events the adapter returned ({@code 0} when the fetch itself failed)
+ * @param eventsInserted canonical events this source created during the run
+ * @param eventsMerged events this source attached to an existing canonical event (cross-source dup)
  * @param error log-safe failure description, {@code null} for a successful sync
  */
 public record SourceSyncResult(
@@ -24,6 +26,8 @@ public record SourceSyncResult(
     Instant finishedAt,
     int pagesFetched,
     int eventsSeen,
+    int eventsInserted,
+    int eventsMerged,
     String error) {
 
   public enum Status {
@@ -45,6 +49,12 @@ public record SourceSyncResult(
     if (eventsSeen < 0) {
       throw new IllegalArgumentException("eventsSeen must not be negative");
     }
+    if (eventsInserted < 0 || eventsMerged < 0) {
+      throw new IllegalArgumentException("inserted and merged counts must not be negative");
+    }
+    if (eventsInserted + eventsMerged > eventsSeen) {
+      throw new IllegalArgumentException("inserted + merged must not exceed eventsSeen");
+    }
     if (status == Status.OK && error != null) {
       throw new IllegalArgumentException("a successful sync must not carry an error");
     }
@@ -54,9 +64,23 @@ public record SourceSyncResult(
   }
 
   public static SourceSyncResult ok(
-      SourceId source, Instant startedAt, Instant finishedAt, int pagesFetched, int eventsSeen) {
+      SourceId source,
+      Instant startedAt,
+      Instant finishedAt,
+      int pagesFetched,
+      int eventsSeen,
+      int eventsInserted,
+      int eventsMerged) {
     return new SourceSyncResult(
-        source, Status.OK, startedAt, finishedAt, pagesFetched, eventsSeen, null);
+        source,
+        Status.OK,
+        startedAt,
+        finishedAt,
+        pagesFetched,
+        eventsSeen,
+        eventsInserted,
+        eventsMerged,
+        null);
   }
 
   public static SourceSyncResult failed(
@@ -67,7 +91,7 @@ public record SourceSyncResult(
       int eventsSeen,
       String error) {
     return new SourceSyncResult(
-        source, Status.FAILED, startedAt, finishedAt, pagesFetched, eventsSeen, error);
+        source, Status.FAILED, startedAt, finishedAt, pagesFetched, eventsSeen, 0, 0, error);
   }
 
   public boolean failed() {

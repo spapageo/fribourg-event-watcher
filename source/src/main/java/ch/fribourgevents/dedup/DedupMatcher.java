@@ -44,6 +44,11 @@ public final class DedupMatcher {
     this.properties = Objects.requireNonNull(properties, "properties");
   }
 
+  /** Candidate blocking window in days, needed by callers that build the candidate set. */
+  public int dateWindowDays() {
+    return properties.dateWindowDays();
+  }
+
   /**
    * Decides whether {@code incoming} belongs to one of the canonical {@code candidates}.
    *

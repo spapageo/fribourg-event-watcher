@@ -22,7 +22,7 @@ JUnit tests runnable in milliseconds.
 ### Types (the module's public API)
 
 ```java
-public enum SourceId { INSITU("insitu"), BKA("bka"), EVENTFROG("eventfrog") }
+public enum SourceId { INSITU("insitu"), BKA("bka"), EVENTFROG("eventfrog") }  // priority(): lower wins event.url on a merge
 public enum EventStatus { CONFIRMED, TENTATIVE, CANCELLED, UNKNOWN }
 
 public record FetchWindow(Instant from, Instant to, ZoneId zone)
